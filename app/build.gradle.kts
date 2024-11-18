@@ -56,4 +56,16 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.camera.view)  // optional, for preview image
+    implementation(libs.androidx.camera.extensions)
+
+    implementation(libs.tasks.vision)
+
+    //implementation(libs.solution.core)
+    //implementation(libs.hands)
+    //implementation(libs.tensorflow.lite)
+    //implementation(libs.tensorflow.lite.support)
 }
