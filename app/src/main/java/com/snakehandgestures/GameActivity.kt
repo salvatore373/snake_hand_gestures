@@ -1,6 +1,7 @@
 package com.snakehandgestures
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -10,17 +11,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import java.util.concurrent.Executors
 
 class GameActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,45 +29,52 @@ class GameActivity : ComponentActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
         } else {
             setContent {
-                CameraApp()
+                GameApp()
             }
         }
     }
-}
 
-@Composable
-fun CameraApp() {
-    val context = LocalContext.current
-    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-    val tracker = HandTrackingHelper(LocalContext.current)
+    @Composable
+    fun GameApp() {
+        val context = LocalContext.current
+        setupCamera(context)
 
-    AndroidView(
-        factory = { context ->
-            val previewView = PreviewView(context)
+        // graphics here
+    }
+
+    private fun setupCamera(context: Context) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val tracker = HandTrackingHelper(context)
+
+        cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder().build()
-            val imageAnalyzer = ImageAnalysis.Builder().build()
-                .apply {
-                    setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy: ImageProxy ->
-                        processImage(tracker, imageProxy)
-                    }
-                }
+            // select front camera
+            val cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
+                .build()
 
-            val cameraSelector = CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build()
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // avoid queueing frames
+                .build()
 
-            cameraProvider.bindToLifecycle(
-                context as LifecycleOwner,
-                cameraSelector,
-                preview,
-                imageAnalyzer
-            )
+            // analyzer to process each frame
+            imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
+                processImage(tracker, imageProxy)
+            }
 
-            preview.setSurfaceProvider(previewView.surfaceProvider)
-            previewView
-        },
-        modifier = Modifier.fillMaxSize()
-    )
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this as LifecycleOwner,
+                    cameraSelector,
+                    imageAnalysis
+                )
+            } catch (exc: Exception) {
+                Log.e("CameraX", "Use case binding failed", exc)
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
 }
 
 fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
