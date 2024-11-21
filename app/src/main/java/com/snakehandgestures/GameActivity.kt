@@ -1,7 +1,6 @@
 package com.snakehandgestures
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -43,6 +42,7 @@ class GameActivity : ComponentActivity() {
 fun CameraApp() {
     val context = LocalContext.current
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+    val tracker = HandTrackingHelper(LocalContext.current)
 
     AndroidView(
         factory = { context ->
@@ -53,7 +53,7 @@ fun CameraApp() {
             val imageAnalyzer = ImageAnalysis.Builder().build()
                 .apply {
                     setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy: ImageProxy ->
-                        processImage(context, imageProxy)
+                        processImage(tracker, imageProxy)
                     }
                 }
 
@@ -73,8 +73,7 @@ fun CameraApp() {
     )
 }
 
-fun processImage(context: Context, imageProxy: ImageProxy) {
-    val tracker = HandTrackingHelper(context)
+fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
     val res = tracker.detectHands(imageProxy.toBitmap())
     //Log.d("RES", res?.results[0]?.handednesses())
 
