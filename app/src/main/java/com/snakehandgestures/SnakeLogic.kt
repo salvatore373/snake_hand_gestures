@@ -1,7 +1,9 @@
 package com.snakehandgestures
 
-private enum class CellContent {
-    // EMPTY,  // Represents an empty cell of the grid
+import kotlinx.coroutines.delay
+
+enum class CellContent {
+    EMPTY,  // Represents an empty cell of the grid
     FILLED_BODY,  // Represents a grid cell containing the body of the snake
     FILLED_HEAD,  // Represents a grid cell containing the head of the snake
     PRIZE,  // Represents a grid cell containing the prize
@@ -16,8 +18,18 @@ enum class GameStatus {
     PLAYING, GAME_OVER
 }
 
+/**
+ * The possible difficulty levels of the game. The speed is the duration of the timestep in
+ * milliseconds.
+ */
+enum class GameDifficulty(val speed: Long) {
+    EASY(1000),
+    MEDIUM(750),
+    HARD(500)
+}
+
 // A class representing a cell of the grid
-private data class Cell(val x: Int, val y: Int, var content: CellContent) {
+data class Cell(val x: Int, val y: Int, var content: CellContent) {
     /**
      * Creates a new Cell with the same parameters of this instance, except for the ones
      * specified as arguments.
@@ -32,23 +44,26 @@ private data class Cell(val x: Int, val y: Int, var content: CellContent) {
     fun isAtSamePosition(anotherCell: Cell): Boolean {
         return x == anotherCell.x && y == anotherCell.y
     }
+
+    fun id(): String {
+        return "${x}_${y}"
+    }
 }
 
-class SnakeLogic {
+class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
     // The list of the grid cells occupied by the snake. The order is relevant: the first element
     // is the tail and the last is the head.
-    private var occupiedCells = mutableListOf<Cell>(
+    var occupiedCells = mutableListOf<Cell>(
         Cell(0, 0, CellContent.FILLED_BODY), Cell(1, 0, CellContent.FILLED_HEAD),
     )
+        private set
 
     // The cell containing the prize
-    private var prizeCell: Cell? = null;
+    var prizeCell: Cell? = null
+        private set
 
     // The current direction of the snake
     private var currentDirection: SnakeDirection = SnakeDirection.RIGHT
-
-    private var gridHeight: Int = 5;
-    private var gridWidth: Int = 5;
 
     fun increaseTimestep(): GameStatus {
         var isPlaying: Boolean = true;
@@ -109,11 +124,20 @@ class SnakeLogic {
     }
 
     /**
-     * Change the direction of movement of the snake
+     * Change the direction of movement of the snake, but only if the new direction is not a
+     * forbidden one. Returns the current direction of the snake.
      */
-    fun changeDirection(newDirection: SnakeDirection) {
-        currentDirection = newDirection
-        // TODO: handle moves in forbidden directions
+    fun changeDirection(newDirection: SnakeDirection): SnakeDirection {
+        // Perform the update only if the new direction is not forbidden
+        if ((currentDirection == SnakeDirection.UP && newDirection != SnakeDirection.DOWN) ||
+            (currentDirection == SnakeDirection.DOWN && newDirection != SnakeDirection.UP) ||
+            (currentDirection == SnakeDirection.RIGHT && newDirection != SnakeDirection.LEFT) ||
+            (currentDirection == SnakeDirection.LEFT && newDirection != SnakeDirection.RIGHT)
+        ) {
+            currentDirection = newDirection
+        }
+
+        return currentDirection
     }
 
     /**
@@ -128,5 +152,22 @@ class SnakeLogic {
      */
     fun updatePrizeCell(newX: Int, newY: Int) {
         prizeCell = Cell(newX, newY, CellContent.PRIZE)
+    }
+
+    /**
+     * Starts moving the snake in the grid. The provided difficulty decides the size of the timestep
+     */
+    suspend fun startGame(
+        difficulty: GameDifficulty,
+        onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
+    ) {
+        var gameStatus = GameStatus.PLAYING
+
+        while (gameStatus != GameStatus.GAME_OVER) {
+            gameStatus = increaseTimestep()
+            onNewTimestep(occupiedCells, gameStatus, prizeCell)
+
+            delay(difficulty.speed)
+        }
     }
 }
