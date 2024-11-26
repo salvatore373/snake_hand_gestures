@@ -15,10 +15,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +23,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -37,11 +33,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executors
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.lazy.grid.items
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
@@ -206,18 +199,16 @@ fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
         val centerY = sumY / handLandmarks.toList().size
         //val centerZ = sumZ / handLandmarks.toList().size
 
-        Log.d("POS", "Hand $handIndex Center: x=$centerX, y=$centerY, dir=${getDirection(centerX, centerY)}")
+        val newDir: String = getDirection(centerX, centerY)
+        Log.d("POS", "Hand $handIndex Center: x=$centerX, y=$centerY, dir=${newDir}")
+
+        val isOpen: Boolean = isHandOpen(handLandmarks)
+        Log.d("OPEN", isOpen.toString())
+
+        if (!isOpen){
+            // TODO: change direction here
+        }
     }
 
     imageProxy.close()
-}
-
-fun getDirection(x: Float, y: Float): String {
-    return when {
-        y >= x && y >= 1 - x -> "Right"
-        y >= x && y < 1 - x -> "Top"
-        y < x && y < 1 - x -> "Left"
-        y < x && y >= 1 - x -> "Bottom"
-        else -> "Error"
-    }
 }
