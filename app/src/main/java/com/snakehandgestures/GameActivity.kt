@@ -206,8 +206,18 @@ fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
         val centerY = sumY / handLandmarks.toList().size
         //val centerZ = sumZ / handLandmarks.toList().size
 
-        Log.d("POS", "Hand $handIndex Center: x=$centerX, y=$centerY")
+        Log.d("POS", "Hand $handIndex Center: x=$centerX, y=$centerY, dir=${getDirection(centerX, centerY)}")
     }
 
     imageProxy.close()
+}
+
+fun getDirection(x: Float, y: Float): String {
+    return when {
+        y >= x && y >= 1 - x -> "Right"
+        y >= x && y < 1 - x -> "Top"
+        y < x && y < 1 - x -> "Left"
+        y < x && y >= 1 - x -> "Bottom"
+        else -> "Error"
+    }
 }
