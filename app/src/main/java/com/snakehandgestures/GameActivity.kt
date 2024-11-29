@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -15,14 +14,18 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -32,28 +35,16 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executors
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.lazy.grid.items
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
 
 class GameActivity : ComponentActivity() {
-    val snakeLogic = SnakeLogic(GRID_WIDTH, GRID_HEIGHT)
-
-    // A list storing the content of the grid cells in column-major order
-    var gridCells by mutableStateOf<List<Cell>>(List<Cell>(GRID_HEIGHT * GRID_WIDTH) { ind ->
-        Cell(
-            ind / GRID_HEIGHT,
-            ind % GRID_WIDTH,
-            CellContent.EMPTY
-        )
-    })
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         // if needed request permission to use camera
         if (ContextCompat.checkSelfPermission(
@@ -63,77 +54,71 @@ class GameActivity : ComponentActivity() {
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
         } else {
-            // Start the game logic coroutine
-//            lifecycleScope.launch {
-//                var difficulty = GameDifficulty.EASY  // TODO:
-//                snakeLogic.startGame(difficulty) { snakeOccupiedCells, newGameStatus, newPrizeCell ->
-//                    {
-//                        println("callback executed")
-//                        // Update the content of gridCells
-//                        for (cell in snakeOccupiedCells) {
-//                            gridCells[cell.y * GRID_WIDTH + cell.x].content = cell.content
-//                        }
-//
-//                        // TODO: prizeCell = newPrizeCell
-//                        // TODO: gameStatus = newGameStatus
-//                    }
-//                }
-//            }
-            var snakeGridViewModel = SnakeGridViewModel()
-            snakeGridViewModel.startGame(GameDifficulty.EASY)
+            val viewModel = ViewModelProvider(this)
+                .get(SnakeGridViewModel::class.java)
 
             setContent {
-                GameApp()
+                GameplayScreen(snakeGridViewModel = viewModel)
             }
         }
     }
 
     @Composable
-    fun GameApp() {
+    fun GameplayScreen(
+        snakeGridViewModel: SnakeGridViewModel = viewModel()
+    ) {
         val context = LocalContext.current
         setupCamera(context)
 
+        // Start the game
+        // snakeGridViewModel.startGameLogic()
+
         // graphics here
-        // Surface { SnakeGrid(gridCells) }
+        Surface {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                SnakeGrid(cells = snakeGridViewModel.cells)
+                // Button() { }
+            }
+        }
     }
 
     // Returns the grid where the snake will be
     @Composable
-    fun SnakeGrid(cells: List<Cell>) {
+    fun SnakeGrid(cells: List<SnakeCell>) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(GRID_WIDTH),
             userScrollEnabled = false,
-            modifier = Modifier.size(width = 208.dp, height = 208.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalArrangement = Arrangement.Center,
         ) {
             items(
                 cells,
                 key = { cell -> cell.id() }
             ) { cell ->
-                SnakeGridCell(cell)
+                SnakeGridCell(cell.content)
             }
         }
     }
 
     @Composable
-    fun SnakeGridCell(cell: Cell) {
-        var contentText = when (cell.content) {
+    fun SnakeGridCell(cellContent: CellContent) {
+        val boxContent: String = when (cellContent) {
+            CellContent.PRIZE -> 'P'
             CellContent.FILLED_HEAD -> "H"
-            CellContent.PRIZE -> "P"
-            CellContent.FILLED_BODY -> "."
+            CellContent.FILLED_BODY -> "B"
             else -> ""
-        }
+        }.toString()
 
         Box(
             modifier = Modifier
+                .aspectRatio(1f)
                 .size(24.dp)
                 .background(
                     color = Color.Gray,
                     shape = RoundedCornerShape(2.dp)
                 )
         ) {
-            Text(contentText)
+            Text(boxContent)
         }
     }
 
@@ -141,7 +126,6 @@ class GameActivity : ComponentActivity() {
     @Composable
     fun GridPreview() {
         Surface {
-            SnakeGrid(gridCells)
         }
     }
 
@@ -205,7 +189,7 @@ fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
         val isOpen: Boolean = isHandOpen(handLandmarks)
         Log.d("OPEN", isOpen.toString())
 
-        if (!isOpen){
+        if (!isOpen) {
             // TODO: change direction here
         }
     }

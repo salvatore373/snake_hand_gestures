@@ -1,6 +1,8 @@
 package com.snakehandgestures
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 enum class CellContent {
     EMPTY,  // Represents an empty cell of the grid
@@ -23,9 +25,7 @@ enum class GameStatus {
  * milliseconds.
  */
 enum class GameDifficulty(val speed: Long) {
-    EASY(1000),
-    MEDIUM(750),
-    HARD(500)
+    EASY(1000), MEDIUM(750), HARD(500)
 }
 
 // A class representing a cell of the grid
@@ -43,10 +43,6 @@ data class Cell(val x: Int, val y: Int, var content: CellContent) {
      */
     fun isAtSamePosition(anotherCell: Cell): Boolean {
         return x == anotherCell.x && y == anotherCell.y
-    }
-
-    fun id(): String {
-        return "${x}_${y}"
     }
 }
 
@@ -129,11 +125,7 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
      */
     fun changeDirection(newDirection: SnakeDirection): SnakeDirection {
         // Perform the update only if the new direction is not forbidden
-        if ((currentDirection == SnakeDirection.UP && newDirection != SnakeDirection.DOWN) ||
-            (currentDirection == SnakeDirection.DOWN && newDirection != SnakeDirection.UP) ||
-            (currentDirection == SnakeDirection.RIGHT && newDirection != SnakeDirection.LEFT) ||
-            (currentDirection == SnakeDirection.LEFT && newDirection != SnakeDirection.RIGHT)
-        ) {
+        if ((currentDirection == SnakeDirection.UP && newDirection != SnakeDirection.DOWN) || (currentDirection == SnakeDirection.DOWN && newDirection != SnakeDirection.UP) || (currentDirection == SnakeDirection.RIGHT && newDirection != SnakeDirection.LEFT) || (currentDirection == SnakeDirection.LEFT && newDirection != SnakeDirection.RIGHT)) {
             currentDirection = newDirection
         }
 
@@ -158,14 +150,15 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
      * Starts moving the snake in the grid. The provided difficulty decides the size of the timestep
      */
     suspend fun startGame(
-        difficulty: GameDifficulty,
-        onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
+        difficulty: GameDifficulty, onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
     ) {
+        // ): Flow<List<Cell>> = flow {
         var gameStatus = GameStatus.PLAYING
 
         while (gameStatus != GameStatus.GAME_OVER) {
             gameStatus = increaseTimestep()
             onNewTimestep(occupiedCells, gameStatus, prizeCell)
+            // emit(occupiedCells)
 
             delay(difficulty.speed)
         }
