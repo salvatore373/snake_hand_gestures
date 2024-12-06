@@ -5,6 +5,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
@@ -33,13 +34,10 @@ class SnakeGridViewModel() : ViewModel() {
         get() = _cells
 
     // Function to start the periodic task
-    // fun startGameLogic() {
-    init {
+    fun startGameLogic() {
         viewModelScope.launch {
             _snakeLogic.startGame(GameDifficulty.EASY) // TODO get difficulty from UI
-            { snakeCells, gameStatus, prizeCell -> {
-                    1 / 0
-                    println("hello")
+                .collect() { snakeCells ->
                     // Update the cells in _cells that changed their content
                     for (snakeCell in snakeCells) {
                         var uiCellInd = snakeCell.x * GRID_HEIGHT + snakeCell.y
@@ -52,7 +50,6 @@ class SnakeGridViewModel() : ViewModel() {
                     // TODO: handle game status
                     // TODO: handle prize cell
                 }
-            }
         }
     }
 }

@@ -36,6 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executors
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -60,6 +61,9 @@ class GameActivity : ComponentActivity() {
             setContent {
                 GameplayScreen(snakeGridViewModel = viewModel)
             }
+
+            // Start the game
+            viewModel.startGameLogic()
         }
     }
 
@@ -69,9 +73,6 @@ class GameActivity : ComponentActivity() {
     ) {
         val context = LocalContext.current
         setupCamera(context)
-
-        // Start the game
-        // snakeGridViewModel.startGameLogic()
 
         // graphics here
         Surface {
@@ -118,7 +119,7 @@ class GameActivity : ComponentActivity() {
                     shape = RoundedCornerShape(2.dp)
                 )
         ) {
-            Text(boxContent)
+            Text(boxContent, fontSize = 30.sp)
         }
     }
 

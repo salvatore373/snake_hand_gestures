@@ -150,15 +150,16 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
      * Starts moving the snake in the grid. The provided difficulty decides the size of the timestep
      */
     suspend fun startGame(
-        difficulty: GameDifficulty, onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
-    ) {
-        // ): Flow<List<Cell>> = flow {
+        difficulty: GameDifficulty,
+        // onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
+        // ) {
+    ) = flow {
         var gameStatus = GameStatus.PLAYING
 
         while (gameStatus != GameStatus.GAME_OVER) {
             gameStatus = increaseTimestep()
-            onNewTimestep(occupiedCells, gameStatus, prizeCell)
-            // emit(occupiedCells)
+            // onNewTimestep(occupiedCells, gameStatus, prizeCell)
+            emit(occupiedCells)
 
             delay(difficulty.speed)
         }
