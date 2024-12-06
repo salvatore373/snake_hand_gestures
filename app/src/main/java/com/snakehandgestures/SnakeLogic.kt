@@ -114,7 +114,7 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
         }
 
         // Update the position of the snake's tail
-        occupiedCells.removeAt(0)
+        if (isPlaying) occupiedCells.removeAt(0)
 
         return if (isPlaying) GameStatus.PLAYING else GameStatus.GAME_OVER
     }
@@ -151,15 +151,15 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
      */
     suspend fun startGame(
         difficulty: GameDifficulty,
-        // onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
-        // ) {
-    ) = flow {
+        onNewTimestep: (MutableList<Cell>, GameStatus, Cell?) -> Unit
+    ) {
+        // ) = flow {
         var gameStatus = GameStatus.PLAYING
 
         while (gameStatus != GameStatus.GAME_OVER) {
             gameStatus = increaseTimestep()
-            // onNewTimestep(occupiedCells, gameStatus, prizeCell)
-            emit(occupiedCells)
+            onNewTimestep(occupiedCells, gameStatus, prizeCell)
+            // emit(occupiedCells)
 
             delay(difficulty.speed)
         }

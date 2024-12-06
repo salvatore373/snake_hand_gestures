@@ -12,14 +12,12 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +34,15 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executors
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +51,7 @@ const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
 
 class GameActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,15 +63,13 @@ class GameActivity : ComponentActivity() {
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
         } else {
-            val viewModel = ViewModelProvider(this)
-                .get(SnakeGridViewModel::class.java)
-
+            var snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
             setContent {
-                GameplayScreen(snakeGridViewModel = viewModel)
+                GameplayScreen(snakeGridViewModel = snakeViewModel)
             }
 
             // Start the game
-            viewModel.startGameLogic()
+            snakeViewModel.startGameLogic()
         }
     }
 
@@ -80,7 +86,32 @@ class GameActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 SnakeGrid(cells = snakeGridViewModel.cells)
-                // Button() { }
+                SnakeCommands(snakeGridViewModel) // DEBUG
+                Text(
+                    if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
+                    // "Playing",
+                    fontSize = 30.sp
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun SnakeCommands(
+        snakeGridViewModel: SnakeGridViewModel
+    ) {
+        Row {
+            IconButton(onClick = { snakeGridViewModel.changeDirection(SnakeDirection.UP) }) {
+                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Go up")
+            }
+            IconButton(onClick = { snakeGridViewModel.changeDirection(SnakeDirection.DOWN) }) {
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Go down")
+            }
+            IconButton(onClick = { snakeGridViewModel.changeDirection(SnakeDirection.LEFT) }) {
+                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = "Go left")
+            }
+            IconButton(onClick = { snakeGridViewModel.changeDirection(SnakeDirection.RIGHT) }) {
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Go right")
             }
         }
     }
@@ -106,7 +137,7 @@ class GameActivity : ComponentActivity() {
         val boxContent: String = when (cellContent) {
             CellContent.PRIZE -> 'P'
             CellContent.FILLED_HEAD -> "H"
-            CellContent.FILLED_BODY -> "B"
+            CellContent.FILLED_BODY -> "o"
             else -> ""
         }.toString()
 
@@ -125,8 +156,9 @@ class GameActivity : ComponentActivity() {
 
     @Preview(showBackground = true, widthDp = 120, heightDp = 120)
     @Composable
-    fun GridPreview() {
+    fun ScreenPreview() {
         Surface {
+            SnakeCommands(viewModel())
         }
     }
 
