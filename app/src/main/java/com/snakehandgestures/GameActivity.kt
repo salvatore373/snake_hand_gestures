@@ -69,7 +69,7 @@ class GameActivity : ComponentActivity() {
             }
 
             // Start the game
-            snakeViewModel.startGameLogic()
+            snakeViewModel.startGameLogic(GameDifficulty.EASY) // TODO: get difficulty from UI
         }
     }
 
@@ -87,9 +87,13 @@ class GameActivity : ComponentActivity() {
             ) {
                 SnakeGrid(cells = snakeGridViewModel.cells)
                 SnakeCommands(snakeGridViewModel) // DEBUG
-                Text(
+                Text(// DEBUG
                     if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
                     // "Playing",
+                    fontSize = 30.sp
+                )
+                Text( // DEBUG
+                    "Score: ${snakeGridViewModel.score}",
                     fontSize = 30.sp
                 )
             }
