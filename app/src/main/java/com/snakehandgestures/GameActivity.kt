@@ -11,7 +11,9 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,10 +41,16 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -129,6 +137,7 @@ class GameActivity : ComponentActivity() {
         LazyVerticalGrid(
             columns = GridCells.Fixed(GRID_WIDTH),
             userScrollEnabled = false,
+            // modifier = Modifier.border(width = 16.dp, color = MaterialTheme.colorScheme.tertiary)
         ) {
             items(
                 cells,
@@ -140,24 +149,58 @@ class GameActivity : ComponentActivity() {
     }
 
     @Composable
+    fun ContentImage(source: Int, contentDescription: String) {
+        Image(
+            painter = painterResource(id = R.drawable.snake_head_green),
+            contentDescription = "Snake Head",
+            // modifier = Modifier.size(AssistChipDefaults.IconSize),
+            modifier = Modifier.size(48.dp),
+            // tint = Color(0xFFFFFFFF),
+        )
+    }
+
+    @Composable
     fun SnakeGridCell(cellContent: CellContent) {
-        val boxContent: String = when (cellContent) {
-            CellContent.PRIZE -> 'P'
-            CellContent.FILLED_HEAD -> "H"
-            CellContent.FILLED_BODY -> "o"
-            else -> ""
-        }.toString()
+//        val boxContent: String = when (cellContent) {
+//            CellContent.PRIZE -> 'P'
+//            CellContent.FILLED_HEAD -> "H"
+//            CellContent.FILLED_BODY -> "o"
+//            else -> ""
+//        }.toString()
 
         Box(
             modifier = Modifier
                 .aspectRatio(1f)
                 .size(24.dp)
                 .background(
-                    color = Color.Gray,
-                    // shape = RoundedCornerShape(2.dp)
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                 )
+                .border(width = 0.25.dp, color = MaterialTheme.colorScheme.surface)
         ) {
-            Text(boxContent, fontSize = 30.sp)
+            // TODO: center what's below
+            // TODO: fill the box with the image
+            if (cellContent == CellContent.PRIZE) {
+                Image(
+                    painter = painterResource(id = R.drawable.egg),
+                    contentDescription = "Prize",
+                    modifier = Modifier.size(48.dp),
+                )
+            } else if (cellContent == CellContent.FILLED_BODY) {
+                Image(
+                    painter = painterResource(id = R.drawable.snake_tail_green),
+                    contentDescription = "Snake Body",
+                    modifier = Modifier.size(48.dp),
+                )
+            } else if (cellContent == CellContent.FILLED_HEAD) {
+                Image(
+                    painter = painterResource(id = R.drawable.snake_head_green),
+                    contentDescription = "Snake Head", // TODO: rotate the head based on the direction
+                    modifier = Modifier.size(48.dp),
+                )
+            } else {
+                Text("", fontSize = 30.sp)
+            }
+
         }
     }
 
