@@ -46,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
@@ -65,7 +66,9 @@ class GameActivity : ComponentActivity() {
         } else {
             var snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
             setContent {
-                GameplayScreen(snakeGridViewModel = snakeViewModel)
+                SnakeHandGesturesTheme {
+                    GameplayScreen(snakeGridViewModel = snakeViewModel)
+                }
             }
 
             // Start the game
@@ -151,7 +154,7 @@ class GameActivity : ComponentActivity() {
                 .size(24.dp)
                 .background(
                     color = Color.Gray,
-                    shape = RoundedCornerShape(2.dp)
+                    // shape = RoundedCornerShape(2.dp)
                 )
         ) {
             Text(boxContent, fontSize = 30.sp)
@@ -161,8 +164,8 @@ class GameActivity : ComponentActivity() {
     @Preview(showBackground = true, widthDp = 120, heightDp = 120)
     @Composable
     fun ScreenPreview() {
-        Surface {
-            SnakeCommands(viewModel())
+        SnakeHandGesturesTheme {
+            GameplayScreen(snakeGridViewModel = viewModel())
         }
     }
 
