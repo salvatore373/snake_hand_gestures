@@ -59,7 +59,7 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
         private set
 
     // The current direction of the snake
-    private var currentDirection: SnakeDirection = SnakeDirection.RIGHT
+    var currentDirection: SnakeDirection = SnakeDirection.RIGHT
 
     fun increaseTimestep(): GameStatus {
         var isPlaying: Boolean = true;
@@ -115,6 +115,8 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
 
         // Update the position of the snake's tail
         if (isPlaying) occupiedCells.removeAt(0)
+
+        // TODO: add game over on intersection between head and body
 
         return if (isPlaying) GameStatus.PLAYING else GameStatus.GAME_OVER
     }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -48,6 +49,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
@@ -96,7 +98,10 @@ class GameActivity : ComponentActivity() {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                SnakeGrid(cells = snakeGridViewModel.cells)
+                SnakeGrid(
+                    cells = snakeGridViewModel.cells,
+                    snakeDirection = snakeGridViewModel.direction
+                )
                 SnakeCommands(snakeGridViewModel) // DEBUG
                 Text(// DEBUG
                     if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
@@ -133,7 +138,7 @@ class GameActivity : ComponentActivity() {
 
     // Returns the grid where the snake will be
     @Composable
-    fun SnakeGrid(cells: List<SnakeCell>) {
+    fun SnakeGrid(cells: List<SnakeCell>, snakeDirection: SnakeDirection) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(GRID_WIDTH),
             userScrollEnabled = false,
@@ -143,32 +148,15 @@ class GameActivity : ComponentActivity() {
                 cells,
                 key = { cell -> cell.id() }
             ) { cell ->
-                SnakeGridCell(cell.content)
+                SnakeGridCell(cell.content, snakeDirection)
             }
         }
     }
 
     @Composable
-    fun ContentImage(source: Int, contentDescription: String) {
-        Image(
-            painter = painterResource(id = R.drawable.snake_head_green),
-            contentDescription = "Snake Head",
-            // modifier = Modifier.size(AssistChipDefaults.IconSize),
-            modifier = Modifier.size(48.dp),
-            // tint = Color(0xFFFFFFFF),
-        )
-    }
-
-    @Composable
-    fun SnakeGridCell(cellContent: CellContent) {
-//        val boxContent: String = when (cellContent) {
-//            CellContent.PRIZE -> 'P'
-//            CellContent.FILLED_HEAD -> "H"
-//            CellContent.FILLED_BODY -> "o"
-//            else -> ""
-//        }.toString()
-
+    fun SnakeGridCell(cellContent: CellContent, snakeDirection: SnakeDirection) {
         Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .aspectRatio(1f)
                 .size(24.dp)
@@ -177,25 +165,32 @@ class GameActivity : ComponentActivity() {
                 )
                 .border(width = 0.25.dp, color = MaterialTheme.colorScheme.surface)
         ) {
-            // TODO: center what's below
-            // TODO: fill the box with the image
             if (cellContent == CellContent.PRIZE) {
                 Image(
                     painter = painterResource(id = R.drawable.egg),
                     contentDescription = "Prize",
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else if (cellContent == CellContent.FILLED_BODY) {
                 Image(
                     painter = painterResource(id = R.drawable.snake_tail_green),
                     contentDescription = "Snake Body",
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else if (cellContent == CellContent.FILLED_HEAD) {
+                var rotationDegrees = when (snakeDirection) {
+                    SnakeDirection.UP -> 180f
+                    SnakeDirection.DOWN -> 0f
+                    SnakeDirection.LEFT -> 90f
+                    SnakeDirection.RIGHT -> -90f
+                }
+
                 Image(
                     painter = painterResource(id = R.drawable.snake_head_green),
-                    contentDescription = "Snake Head", // TODO: rotate the head based on the direction
-                    modifier = Modifier.size(48.dp),
+                    contentDescription = "Snake Head",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationZ = rotationDegrees },
                 )
             } else {
                 Text("", fontSize = 30.sp)

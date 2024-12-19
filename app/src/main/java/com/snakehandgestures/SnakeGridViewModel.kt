@@ -54,6 +54,11 @@ class SnakeGridViewModel() : ViewModel() {
     val score: Int
         get() = _score
 
+    // The current direction of the snake movements
+    private var _direction: SnakeDirection by mutableStateOf(_snakeLogic.currentDirection)
+    val direction: SnakeDirection
+        get() = _direction
+
     // Function to start the periodic task
     fun startGameLogic(difficulty: GameDifficulty) {
         viewModelScope.launch {
@@ -83,6 +88,10 @@ class SnakeGridViewModel() : ViewModel() {
                 // Update the game status if necessary
                 if (newGameStatus != _gameStatus) {
                     _gameStatus = newGameStatus
+                }
+                // Update the snake direction if necessary
+                if (_snakeLogic.currentDirection != _direction) {
+                    _direction = _snakeLogic.currentDirection
                 }
 
                 // Check whether the prize was reached or needs to be initialized
