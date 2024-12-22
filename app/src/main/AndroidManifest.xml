@@ -3,7 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -15,6 +18,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SnakeHandGestures"
         tools:targetApi="31">
+        <activity
+            android:name=".GameParametersActivity"
+            android:exported="false"
+            android:label="@string/title_activity_game_parameters"
+            android:theme="@style/Theme.SnakeHandGestures" />
         <activity
             android:name=".GameActivity"
             android:exported="false"

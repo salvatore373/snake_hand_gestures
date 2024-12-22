@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Snake Hand Gestures</string>
     <string name="title_activity_game">GameActivity</string>
+    <string name="title_activity_game_parameters">GameParametersActivity</string>
 </resources>

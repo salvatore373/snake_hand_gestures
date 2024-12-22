@@ -68,7 +68,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             ) {
                 Button(
                     onClick = {
-                        val intent = Intent(context, GameActivity::class.java)
+                        val intent = Intent(context, GameParametersActivity::class.java)
                         context.startActivity(intent)
                     },
                 ) {

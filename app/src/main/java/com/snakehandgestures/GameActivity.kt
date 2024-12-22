@@ -82,7 +82,7 @@ class GameActivity : ComponentActivity() {
             }
 
             // Start the game
-            snakeViewModel.startGameLogic(GameDifficulty.EASY) // TODO: get difficulty from UI
+            snakeViewModel.startGameLogic(GameDifficulty.MEDIUM) // TODO: get difficulty from UI
         }
     }
 
