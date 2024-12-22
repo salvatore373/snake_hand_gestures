@@ -5,27 +5,38 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonColors
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -43,10 +54,21 @@ import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 
 enum class GameMode {
     HAND_GESTURES,
     ACCELEROMETER
+}
+
+enum class AvatarColors {
+    GREEN,
+    YELLOW,
+    BROWN
 }
 
 class GameParametersActivity : ComponentActivity() {
@@ -61,7 +83,11 @@ class GameParametersActivity : ComponentActivity() {
                     topBar = { TopBar() },
                     floatingActionButton = { PlayButton() }
                 ) { innerPadding ->
-                    GameParametersStack(modifier = Modifier.padding(innerPadding))
+                    GameParametersStack(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .padding(horizontal = 16.dp)
+                    )
                 }
             }
         }
@@ -71,14 +97,14 @@ class GameParametersActivity : ComponentActivity() {
     fun PlayButton() {
         val context = LocalContext.current
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
+        ExtendedFloatingActionButton(
             onClick = {
                 val intent = Intent(context, GameActivity::class.java)
                 context.startActivity(intent)
-            }) {
-            Text("Play")
-        }
+            },
+            icon = { Icon(Icons.Filled.PlayArrow, "Play button") },
+            text = { Text("Play") },
+        )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -121,7 +147,9 @@ class GameParametersActivity : ComponentActivity() {
             GameParametersSection("Difficulty") {
                 DifficultySection()
             }
-            GameParametersSection("Snake Color") {}
+            GameParametersSection("Snake Color") {
+                AvatarSection()
+            }
         }
     }
 
@@ -141,6 +169,9 @@ class GameParametersActivity : ComponentActivity() {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = MaterialTheme.colorScheme.tertiary,
+                    ),
                     selected = selectedGameMode == GameMode.HAND_GESTURES,
                     onClick = { selectedGameMode = GameMode.HAND_GESTURES },
                 )
@@ -148,6 +179,9 @@ class GameParametersActivity : ComponentActivity() {
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = MaterialTheme.colorScheme.tertiary,
+                    ),
                     selected = selectedGameMode == GameMode.ACCELEROMETER,
                     onClick = { selectedGameMode = GameMode.ACCELEROMETER },
                 )
@@ -167,8 +201,8 @@ class GameParametersActivity : ComponentActivity() {
         {
             FilledTonalButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-                    contentColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    containerColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                    contentColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
                 onClick = { selectedDifficulty = GameDifficulty.EASY },
             ) {
@@ -176,8 +210,8 @@ class GameParametersActivity : ComponentActivity() {
             }
             FilledTonalButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-                    contentColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    containerColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                    contentColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
                 onClick = { selectedDifficulty = GameDifficulty.MEDIUM },
             ) {
@@ -185,8 +219,8 @@ class GameParametersActivity : ComponentActivity() {
             }
             FilledTonalButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-                    contentColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    containerColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                    contentColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
                 onClick = { selectedDifficulty = GameDifficulty.HARD },
             ) {
@@ -195,50 +229,66 @@ class GameParametersActivity : ComponentActivity() {
         }
     }
 
-//    @Composable
-//    fun AvatarSection() {
-//        var selectedColor by rememberSaveable { mutableStateOf(GameDifficulty.EASY) }
-//
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceEvenly
-//        )
-//        {
-//            FilledTonalButton(
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-//                    contentColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-//                ),
-//                onClick = { selectedDifficulty = GameDifficulty.EASY },
-//            ) {
-//                Text("Easy")
-//            }
-//            FilledTonalButton(
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-//                    contentColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-//                ),
-//                onClick = { selectedDifficulty = GameDifficulty.MEDIUM },
-//            ) {
-//                Text("Medium")
-//            }
-//            FilledTonalButton(
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceDim,
-//                    contentColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-//                ),
-//                onClick = { selectedDifficulty = GameDifficulty.HARD },
-//            ) {
-//                Text("Hard")
-//            }
-//        }
-//    }
-
-    @Preview(showBackground = true)
     @Composable
-    fun GreetingPreview2() {
-        SnakeHandGesturesTheme {
-            GameModeSection()
+    fun AvatarSection() {
+        var selectedColor by rememberSaveable { mutableStateOf(AvatarColors.GREEN) }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        )
+        {
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .border(4.dp,
+                        if (selectedColor== AvatarColors.GREEN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+                    .clickable { selectedColor = AvatarColors.GREEN },
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.snake_head_green),
+                    contentDescription = "Green Avatar",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .border(4.dp,
+                        if (selectedColor== AvatarColors.YELLOW) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+                    .clickable { selectedColor = AvatarColors.YELLOW },
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.snake_head_green),
+                    contentDescription = "Yellow Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .border(4.dp,
+                        if (selectedColor== AvatarColors.BROWN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+                    .clickable { selectedColor = AvatarColors.BROWN },
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.snake_head_green),
+                    contentDescription = "Brown Avatar",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
