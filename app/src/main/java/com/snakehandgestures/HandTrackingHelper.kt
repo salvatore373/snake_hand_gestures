@@ -103,13 +103,13 @@ class HandTrackingHelper(context: Context) {
     )
 }
 
-fun getDirection(x: Float, y: Float): String {
+fun getDirection(x: Float, y: Float): SnakeDirection {
     return when {
-        y >= x && y >= 1 - x -> "Right"
-        y >= x && y < 1 - x -> "Top"
-        y < x && y < 1 - x -> "Left"
-        y < x && y >= 1 - x -> "Bottom"
-        else -> "Error" // Never occurs
+        y >= x && y >= 1 - x -> SnakeDirection.RIGHT
+        y >= x && y < 1 - x -> SnakeDirection.UP
+        y < x && y < 1 - x -> SnakeDirection.LEFT
+        y < x && y >= 1 - x -> SnakeDirection.DOWN
+        else -> SnakeDirection.RIGHT // Never occurs
     }
 }
 

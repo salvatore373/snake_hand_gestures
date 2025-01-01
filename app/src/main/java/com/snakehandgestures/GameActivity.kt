@@ -61,6 +61,8 @@ import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
 
+private lateinit var snakeViewModel: SnakeGridViewModel
+
 class GameActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +86,7 @@ class GameActivity : ComponentActivity() {
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
         } else {
-            var snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
+            snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
             setContent {
                 SnakeHandGesturesTheme {
                     GameplayScreen(snakeGridViewModel = snakeViewModel)
@@ -92,7 +94,7 @@ class GameActivity : ComponentActivity() {
             }
 
             // Start the game
-            snakeViewModel.startGameLogic(selectedDifficulty) // TODO: get difficulty from UI
+            snakeViewModel.startGameLogic(selectedDifficulty)
         }
     }
 
@@ -271,14 +273,14 @@ fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
         val centerY = sumY / handLandmarks.toList().size
         //val centerZ = sumZ / handLandmarks.toList().size
 
-        val newDir: String = getDirection(centerX, centerY)
+        val newDir: SnakeDirection = getDirection(centerX, centerY)
         Log.d("POS", "Hand $handIndex Center: x=$centerX, y=$centerY, dir=${newDir}")
 
         val isOpen: Boolean = isHandOpen(handLandmarks)
         Log.d("OPEN", isOpen.toString())
 
         if (!isOpen) {
-            // TODO: change direction here
+            snakeViewModel.changeDirection(newDir)
         }
     }
 
