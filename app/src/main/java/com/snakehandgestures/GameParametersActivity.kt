@@ -72,6 +72,8 @@ enum class AvatarColors {
 }
 
 class GameParametersActivity : ComponentActivity() {
+    var selectedDifficultyGlob = GameDifficulty.EASY;
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -100,6 +102,7 @@ class GameParametersActivity : ComponentActivity() {
         ExtendedFloatingActionButton(
             onClick = {
                 val intent = Intent(context, GameActivity::class.java)
+                intent.putExtra("difficulty", selectedDifficultyGlob.speed)
                 context.startActivity(intent)
             },
             icon = { Icon(Icons.Filled.PlayArrow, "Play button") },
@@ -204,7 +207,10 @@ class GameParametersActivity : ComponentActivity() {
                     containerColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
                     contentColor = if (selectedDifficulty == GameDifficulty.EASY) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
-                onClick = { selectedDifficulty = GameDifficulty.EASY },
+                onClick = {
+                    selectedDifficulty = GameDifficulty.EASY
+                    selectedDifficultyGlob = GameDifficulty.EASY
+                },
             ) {
                 Text("Easy")
             }
@@ -213,7 +219,10 @@ class GameParametersActivity : ComponentActivity() {
                     containerColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
                     contentColor = if (selectedDifficulty == GameDifficulty.MEDIUM) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
-                onClick = { selectedDifficulty = GameDifficulty.MEDIUM },
+                onClick = {
+                    selectedDifficulty = GameDifficulty.MEDIUM
+                    selectedDifficultyGlob = GameDifficulty.MEDIUM
+                },
             ) {
                 Text("Medium")
             }
@@ -222,7 +231,10 @@ class GameParametersActivity : ComponentActivity() {
                     containerColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
                     contentColor = if (selectedDifficulty == GameDifficulty.HARD) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface
                 ),
-                onClick = { selectedDifficulty = GameDifficulty.HARD },
+                onClick = {
+                    selectedDifficulty = GameDifficulty.HARD
+                    selectedDifficultyGlob = GameDifficulty.HARD
+                },
             ) {
                 Text("Hard")
             }

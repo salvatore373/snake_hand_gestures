@@ -66,6 +66,16 @@ class GameActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Get selected difficulty
+        val speed = intent.getIntExtra("difficulty", GameDifficulty.EASY.speed)
+        var selectedDifficulty = GameDifficulty.EASY
+        for (difficulty in GameDifficulty.entries) {
+            if (difficulty.speed == speed) {
+                selectedDifficulty = difficulty
+            }
+        }
+        println(selectedDifficulty)
+
         // if needed request permission to use camera
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -82,7 +92,7 @@ class GameActivity : ComponentActivity() {
             }
 
             // Start the game
-            snakeViewModel.startGameLogic(GameDifficulty.MEDIUM) // TODO: get difficulty from UI
+            snakeViewModel.startGameLogic(selectedDifficulty) // TODO: get difficulty from UI
         }
     }
 

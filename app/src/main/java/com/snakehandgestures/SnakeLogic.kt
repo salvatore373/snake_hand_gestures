@@ -24,7 +24,7 @@ enum class GameStatus {
  * The possible difficulty levels of the game. The speed is the duration of the timestep in
  * milliseconds.
  */
-enum class GameDifficulty(val speed: Long) {
+enum class GameDifficulty(val speed: Int) {
     EASY(1000), MEDIUM(750), HARD(500)
 }
 
@@ -163,7 +163,7 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
             onNewTimestep(occupiedCells, gameStatus, prizeCell)
             // emit(occupiedCells)
 
-            delay(difficulty.speed)
+            delay(difficulty.speed.toLong())
         }
     }
 }
