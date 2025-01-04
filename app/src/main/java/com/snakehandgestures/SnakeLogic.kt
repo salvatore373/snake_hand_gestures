@@ -69,44 +69,62 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
 
         // Update the position of the snake's head
         var headCell = occupiedCells.last()
+        var newCell: Cell? = null
         when (currentDirection) {
             SnakeDirection.UP -> {
                 val newY = headCell.y - 1
-                if (newY < 0) {
+                if (newY < 0) { // Game over if the snake goes out of the boundaries
                     isPlaying = false
                 } else {
-                    occupiedCells.add(headCell.from(y = newY))
+                    newCell = headCell.from(y = newY)
                 }
 
             }
 
             SnakeDirection.DOWN -> {
                 val newY = headCell.y + 1
-                if (newY >= gridHeight) {
+                if (newY >= gridHeight) { // Game over if the snake goes out of the boundaries
                     isPlaying = false
                 } else {
-                    occupiedCells.add(headCell.from(y = newY))
+                    newCell = headCell.from(y = newY)
                 }
             }
 
             SnakeDirection.RIGHT -> {
                 val newX = headCell.x + 1
-                if (newX >= gridWidth) {
+                if (newX >= gridWidth) { // Game over if the snake goes out of the boundaries
                     isPlaying = false
                 } else {
-                    occupiedCells.add(headCell.from(x = newX))
+                    newCell = headCell.from(x = newX)
                 }
             }
 
             SnakeDirection.LEFT -> {
                 val newX = headCell.x - 1
-                if (newX < 0) {
+                if (newX < 0) { // Game over if the snake goes out of the boundaries
                     isPlaying = false
                 } else {
-                    occupiedCells.add(headCell.from(x = newX))
+                    newCell = headCell.from(x = newX)
                 }
             }
         }
+        if (newCell != null) { // i.e. isPlaying == true
+            // Check whether the new head's position intersects the body
+            occupiedCells.forEachIndexed { ind, occupCell ->
+                if (ind != 0 && occupCell.isAtSamePosition(newCell)) {
+                    // Game over if the snake's head hits the body
+                    isPlaying = false
+                    return@forEachIndexed
+                }
+            }
+
+            if (isPlaying) {
+                // The new position of the snake's head is valid, then continue playing and update
+                // the head's position.
+                occupiedCells.add(newCell)
+            }
+        }
+
         // The cell that was previously holding the head is now holding the body
         if (isPlaying) occupiedCells[occupiedCells.size - 2].content = CellContent.FILLED_BODY
 
@@ -118,8 +136,6 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
 
         // Update the position of the snake's tail
         if (isPlaying) occupiedCells.removeAt(0)
-
-        // TODO: add game over on intersection between head and body
 
         return if (isPlaying) GameStatus.PLAYING else GameStatus.GAME_OVER
     }
