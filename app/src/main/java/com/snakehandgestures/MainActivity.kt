@@ -33,8 +33,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SnakeHandGesturesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    LandingView(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -44,10 +43,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun LandingView(
+    modifier: Modifier = Modifier,
+) {
+
     val context = LocalContext.current
     Box(
-        modifier = Modifier.fillMaxSize(), // make the Box take the entire screen
+        modifier = modifier.fillMaxSize(), // make the Box take the entire screen
         contentAlignment = Alignment.Center // center all elements inside the Box
     ) {
         Column(
@@ -90,6 +92,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     SnakeHandGesturesTheme {
-        Greeting("Android")
+        LandingView()
     }
 }

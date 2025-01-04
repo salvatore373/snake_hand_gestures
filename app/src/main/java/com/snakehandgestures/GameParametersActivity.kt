@@ -110,8 +110,6 @@ class GameParametersActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun TopBar() {
-        val context = LocalContext.current
-
         CenterAlignedTopAppBar(
             title = {
                 Text(
@@ -123,8 +121,7 @@ class GameParametersActivity : ComponentActivity() {
             navigationIcon = {
                 IconButton(
                     onClick = {
-                        val intent = Intent(context, MainActivity::class.java)
-                        context.startActivity(intent)
+                        onBackPressedDispatcher.onBackPressed()
                     }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
