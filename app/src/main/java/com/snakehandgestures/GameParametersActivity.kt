@@ -6,26 +6,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,44 +29,45 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
-enum class GameMode {
-    HAND_GESTURES,
-    ACCELEROMETER
+enum class GameMode(val id: Int) {
+    HAND_GESTURES(0), ACCELEROMETER(1);
+
+    companion object {
+        fun fromId(value: Int): GameMode? =
+            GameMode.entries.firstOrNull { it.id == value }
+    }
 }
 
-enum class AvatarColors {
-    GREEN,
-    YELLOW,
-    BROWN
+enum class AvatarColors(val id: Int) {
+    GREEN(0), YELLOW(1), BROWN(2);
+
+    companion object {
+        fun fromId(value: Int): AvatarColors? =
+            AvatarColors.entries.firstOrNull { it.id == value }
+    }
 }
 
 class GameParametersActivity : ComponentActivity() {
-    var selectedDifficultyGlob = GameDifficulty.EASY;
+    var selectedDifficultyGlob = GameDifficulty.EASY
+    var selectedColorGlob = AvatarColors.GREEN
+    var selectedGameModeGlob = GameMode.HAND_GESTURES
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,6 +98,8 @@ class GameParametersActivity : ComponentActivity() {
             onClick = {
                 val intent = Intent(context, GameActivity::class.java)
                 intent.putExtra("difficulty", selectedDifficultyGlob.speed)
+                intent.putExtra("avatarColor", selectedColorGlob)
+                intent.putExtra("gameMode", selectedGameModeGlob)
                 context.startActivity(intent)
             },
             icon = { Icon(Icons.Filled.PlayArrow, "Play button") },
@@ -167,7 +164,7 @@ class GameParametersActivity : ComponentActivity() {
 
     @Composable
     fun GameModeSection() {
-        var selectedGameMode by rememberSaveable { mutableStateOf(GameMode.HAND_GESTURES) }
+        var selectedGameMode by rememberSaveable { mutableStateOf(selectedGameModeGlob) }
 
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -176,7 +173,10 @@ class GameParametersActivity : ComponentActivity() {
                         selectedColor = MaterialTheme.colorScheme.tertiary,
                     ),
                     selected = selectedGameMode == GameMode.HAND_GESTURES,
-                    onClick = { selectedGameMode = GameMode.HAND_GESTURES },
+                    onClick = {
+                        selectedGameMode = GameMode.HAND_GESTURES
+                        selectedGameModeGlob = GameMode.HAND_GESTURES
+                    },
                 )
                 Text("Hand Gestures")
             }
@@ -186,7 +186,10 @@ class GameParametersActivity : ComponentActivity() {
                         selectedColor = MaterialTheme.colorScheme.tertiary,
                     ),
                     selected = selectedGameMode == GameMode.ACCELEROMETER,
-                    onClick = { selectedGameMode = GameMode.ACCELEROMETER },
+                    onClick = {
+                        selectedGameMode = GameMode.ACCELEROMETER
+                        selectedGameModeGlob = GameMode.ACCELEROMETER
+                    },
                 )
                 Text("Accelerometer")
             }
@@ -195,7 +198,7 @@ class GameParametersActivity : ComponentActivity() {
 
     @Composable
     fun DifficultySection() {
-        var selectedDifficulty by rememberSaveable { mutableStateOf(GameDifficulty.EASY) }
+        var selectedDifficulty by rememberSaveable { mutableStateOf(selectedDifficultyGlob) }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -243,7 +246,7 @@ class GameParametersActivity : ComponentActivity() {
 
     @Composable
     fun AvatarSection() {
-        var selectedColor by rememberSaveable { mutableStateOf(AvatarColors.GREEN) }
+        var selectedColor by rememberSaveable { mutableStateOf(selectedColorGlob) }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -253,12 +256,17 @@ class GameParametersActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .size(88.dp)
-                    .border(4.dp,
-                        if (selectedColor== AvatarColors.GREEN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
-                        CircleShape)
+                    .border(
+                        4.dp,
+                        if (selectedColor == AvatarColors.GREEN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape
+                    )
                     .padding(8.dp)
                     .clip(CircleShape)
-                    .clickable { selectedColor = AvatarColors.GREEN },
+                    .clickable {
+                        selectedColor = AvatarColors.GREEN
+                        selectedColorGlob = AvatarColors.GREEN
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
@@ -270,16 +278,21 @@ class GameParametersActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .size(88.dp)
-                    .border(4.dp,
-                        if (selectedColor== AvatarColors.YELLOW) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
-                        CircleShape)
+                    .border(
+                        4.dp,
+                        if (selectedColor == AvatarColors.YELLOW) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape
+                    )
                     .padding(8.dp)
                     .clip(CircleShape)
-                    .clickable { selectedColor = AvatarColors.YELLOW },
+                    .clickable {
+                        selectedColor = AvatarColors.YELLOW
+                        selectedColorGlob = AvatarColors.YELLOW
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.snake_head_green),
+                    painter = painterResource(id = R.drawable.snake_head_yellow),
                     contentDescription = "Yellow Avatar",
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -287,16 +300,21 @@ class GameParametersActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .size(88.dp)
-                    .border(4.dp,
-                        if (selectedColor== AvatarColors.BROWN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
-                        CircleShape)
+                    .border(
+                        4.dp,
+                        if (selectedColor == AvatarColors.BROWN) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceDim,
+                        CircleShape
+                    )
                     .padding(8.dp)
                     .clip(CircleShape)
-                    .clickable { selectedColor = AvatarColors.BROWN },
+                    .clickable {
+                        selectedColor = AvatarColors.BROWN
+                        selectedColorGlob = AvatarColors.BROWN
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.snake_head_green),
+                    painter = painterResource(id = R.drawable.snake_head_brown),
                     contentDescription = "Brown Avatar",
                     modifier = Modifier.fillMaxSize()
                 )
