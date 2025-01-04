@@ -98,8 +98,8 @@ class GameParametersActivity : ComponentActivity() {
             onClick = {
                 val intent = Intent(context, GameActivity::class.java)
                 intent.putExtra("difficulty", selectedDifficultyGlob.speed)
-                intent.putExtra("avatarColor", selectedColorGlob)
-                intent.putExtra("gameMode", selectedGameModeGlob)
+                intent.putExtra("avatarColor", selectedColorGlob.id)
+                intent.putExtra("gameMode", selectedGameModeGlob.id)
                 context.startActivity(intent)
             },
             icon = { Icon(Icons.Filled.PlayArrow, "Play button") },

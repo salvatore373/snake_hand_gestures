@@ -1,8 +1,6 @@
 package com.snakehandgestures
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 enum class CellContent {
     EMPTY,  // Represents an empty cell of the grid
@@ -25,7 +23,12 @@ enum class GameStatus {
  * milliseconds.
  */
 enum class GameDifficulty(val speed: Int) {
-    EASY(1000), MEDIUM(750), HARD(500)
+    EASY(1000), MEDIUM(750), HARD(500);
+
+    companion object {
+        fun fromSpeed(value: Int): GameDifficulty? =
+            GameDifficulty.entries.firstOrNull { it.speed == value }
+    }
 }
 
 // A class representing a cell of the grid

@@ -23,12 +23,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,17 +40,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,19 +57,36 @@ const val GRID_HEIGHT = 5
 private lateinit var snakeViewModel: SnakeGridViewModel
 
 class GameActivity : ComponentActivity() {
+    var snakeTailSvgPath = R.drawable.snake_tail_green
+    var snakeHeadSvgPath = R.drawable.snake_head_green
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Get the selected avatar color
+        val avatarColorId = intent.getIntExtra("avatarColor", 0)
+        val selectedAvatarColor = AvatarColors.fromId(avatarColorId)!!
+        snakeHeadSvgPath = when (selectedAvatarColor) {
+            AvatarColors.GREEN -> R.drawable.snake_head_green
+            AvatarColors.YELLOW -> R.drawable.snake_head_yellow
+            AvatarColors.BROWN -> R.drawable.snake_head_brown
+        }
+        snakeTailSvgPath = when (selectedAvatarColor) {
+            AvatarColors.GREEN -> R.drawable.snake_tail_green
+            AvatarColors.YELLOW -> R.drawable.snake_tail_yellow
+            AvatarColors.BROWN -> R.drawable.snake_tail_brown
+        }
+        // Get the selected game mode TODO: use it
+        val gameModeId = intent.getIntExtra("gameMode", 0)
+        val selectedGameMode = GameMode.fromId(gameModeId)!!
         // Get selected difficulty
         val speed = intent.getIntExtra("difficulty", GameDifficulty.EASY.speed)
-        var selectedDifficulty = GameDifficulty.EASY
-        for (difficulty in GameDifficulty.entries) {
-            if (difficulty.speed == speed) {
-                selectedDifficulty = difficulty
-            }
-        }
-        println(selectedDifficulty)
+        var selectedDifficulty = GameDifficulty.fromSpeed(speed)!!
+
+        // DEBUG
+        println("Got: $selectedAvatarColor")
+        println("Got: $selectedGameMode")
+        println("Got: $selectedDifficulty")
 
         // if needed request permission to use camera
         if (ContextCompat.checkSelfPermission(
@@ -185,7 +195,7 @@ class GameActivity : ComponentActivity() {
                 )
             } else if (cellContent == CellContent.FILLED_BODY) {
                 Image(
-                    painter = painterResource(id = R.drawable.snake_tail_green),
+                    painter = painterResource(id = snakeTailSvgPath),
                     contentDescription = "Snake Body",
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -198,7 +208,7 @@ class GameActivity : ComponentActivity() {
                 }
 
                 Image(
-                    painter = painterResource(id = R.drawable.snake_head_green),
+                    painter = painterResource(id = snakeHeadSvgPath),
                     contentDescription = "Snake Head",
                     modifier = Modifier
                         .fillMaxSize()
