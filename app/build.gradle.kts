@@ -60,7 +60,7 @@ dependencies {
 
     implementation(libs.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.camera.view)  // optional, for preview image
+    implementation(libs.camera.view)
     implementation(libs.androidx.camera.extensions)
 
     implementation(libs.tasks.vision)

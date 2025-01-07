@@ -1,16 +1,21 @@
 package com.snakehandgestures
 
+// import androidx.compose.ui.tooling.preview.Preview
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,20 +25,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import java.util.concurrent.Executors
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -43,13 +38,27 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
+import java.util.concurrent.Executors
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
@@ -95,17 +104,18 @@ class GameActivity : ComponentActivity() {
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
-        } else {
-            snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
-            setContent {
-                SnakeHandGesturesTheme {
-                    GameplayScreen(snakeGridViewModel = snakeViewModel)
-                }
-            }
-
-            // Start the game
-            snakeViewModel.startGameLogic(selectedDifficulty)
         }
+
+        snakeViewModel = ViewModelProvider(this).get(SnakeGridViewModel::class.java)
+        setContent {
+            SnakeHandGesturesTheme {
+                GameplayScreen(snakeGridViewModel = snakeViewModel)
+            }
+        }
+
+        // Start the game
+        snakeViewModel.startGameLogic(selectedDifficulty)
+
     }
 
     @Composable
@@ -120,6 +130,7 @@ class GameActivity : ComponentActivity() {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                CameraPreview()
                 SnakeGrid(
                     cells = snakeGridViewModel.cells,
                     snakeDirection = snakeGridViewModel.direction
@@ -133,6 +144,73 @@ class GameActivity : ComponentActivity() {
                 Text( // DEBUG
                     "Score: ${snakeGridViewModel.score}",
                     fontSize = 30.sp
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun CameraPreview() {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        Box(
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+        ) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    val previewView = PreviewView(ctx).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                    }
+
+                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                    cameraProviderFuture.addListener({
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder()
+                            // .setTargetAspectRatio(RATIO_16_9)
+                            .build()
+
+                        val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+
+                        preview.surfaceProvider = previewView.surfaceProvider
+
+                        try {
+                            cameraProvider.unbindAll()
+                            cameraProvider.bindToLifecycle(
+                                lifecycleOwner,
+                                cameraSelector,
+                                preview
+                            )
+                        } catch (e: Exception) {
+                            Log.e("CameraPreview", "Camera binding failed: ${e.message}", e)
+                        }
+                    }, ContextCompat.getMainExecutor(ctx))
+
+                    previewView
+                }
+            )
+
+            // Overlay with Diagonal Lines
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(0f, 0f),
+                    end = Offset(width, height),
+                    strokeWidth = 4f
+                )
+
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(0f, height),
+                    end = Offset(width, 0f),
+                    strokeWidth = 4f
                 )
             }
         }
@@ -218,14 +296,6 @@ class GameActivity : ComponentActivity() {
                 Text("", fontSize = 30.sp)
             }
 
-        }
-    }
-
-    @Preview(showBackground = true, widthDp = 120, heightDp = 120)
-    @Composable
-    fun ScreenPreview() {
-        SnakeHandGesturesTheme {
-            GameplayScreen(snakeGridViewModel = viewModel())
         }
     }
 
