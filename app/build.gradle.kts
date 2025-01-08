@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -65,8 +67,7 @@ dependencies {
 
     implementation(libs.tasks.vision)
 
-    //implementation(libs.solution.core)
-    //implementation(libs.hands)
-    //implementation(libs.tensorflow.lite)
-    //implementation(libs.tensorflow.lite.support)
+    implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
 }

@@ -39,6 +39,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        init()
+        getSortedScores { sortedScores ->
+            // Quando i dati sono pronti, questa funzione viene chiamata con i risultati
+            sortedScores.forEach {
+                println("${it.first}: ${it.second}")
+            }
+        }
     }
 }
 
