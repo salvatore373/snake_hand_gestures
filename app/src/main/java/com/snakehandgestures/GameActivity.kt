@@ -9,11 +9,14 @@ import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.CameraController
+import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -69,6 +72,10 @@ class GameActivity : ComponentActivity() {
     var snakeTailSvgPath = R.drawable.snake_tail_green
     var snakeHeadSvgPath = R.drawable.snake_head_green
 
+    var handPositionX: Float = 0f
+    var handPositionY: Float = 0f
+    var isHandOpenGlob: Boolean = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -123,7 +130,7 @@ class GameActivity : ComponentActivity() {
         snakeGridViewModel: SnakeGridViewModel = viewModel()
     ) {
         val context = LocalContext.current
-        setupCamera(context)
+        // setupCamera(context)
 
         // graphics here
         Surface {
@@ -151,23 +158,38 @@ class GameActivity : ComponentActivity() {
 
     @Composable
     fun CameraPreview() {
+        var handPosX by remember { mutableStateOf(handPositionX) }
+        var handPosY by remember { mutableStateOf(handPositionY) }
+        var isHandOpen by remember { mutableStateOf(isHandOpenGlob) }
+
+        val context: Context = LocalContext.current
+        val cameraController: LifecycleCameraController =
+            remember { LifecycleCameraController(context) }
+
         val lifecycleOwner = LocalLifecycleOwner.current
         Box(
             modifier = Modifier
-                .height(200.dp)
+                .height(250.dp)
                 .fillMaxWidth()
         ) {
             AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx).apply {
+                modifier = Modifier
+                    .fillMaxSize(),
+                factory = { context ->
+                    val previewView = PreviewView(context).apply {
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
+                        // setBackgroundColor(Color.BLACK)
+                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                        scaleType = PreviewView.ScaleType.FILL_START
+                    }
+                    previewView.also { previewView ->
+                        setupCamera(context)
                     }
 
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
                     cameraProviderFuture.addListener({
                         val cameraProvider = cameraProviderFuture.get()
                         val preview = Preview.Builder()
@@ -179,7 +201,7 @@ class GameActivity : ComponentActivity() {
                         preview.surfaceProvider = previewView.surfaceProvider
 
                         try {
-                            cameraProvider.unbindAll()
+//                            cameraProvider.unbindAll()
                             cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 cameraSelector,
@@ -188,7 +210,7 @@ class GameActivity : ComponentActivity() {
                         } catch (e: Exception) {
                             Log.e("CameraPreview", "Camera binding failed: ${e.message}", e)
                         }
-                    }, ContextCompat.getMainExecutor(ctx))
+                    }, ContextCompat.getMainExecutor(context))
 
                     previewView
                 }
@@ -211,6 +233,13 @@ class GameActivity : ComponentActivity() {
                     start = Offset(0f, height),
                     end = Offset(width, 0f),
                     strokeWidth = 4f
+                )
+
+                // Draw center dot
+                drawCircle(
+                    color = Color.Blue,
+                    radius = 10f, // Adjust size of the dot
+                    center = Offset(handPositionX, handPositionY)
                 )
             }
         }
@@ -315,9 +344,14 @@ class GameActivity : ComponentActivity() {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // avoid queueing frames
                 .build()
 
-            // analyzer to process each frame
             imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
-                processImage(tracker, imageProxy)
+                processImage(tracker, imageProxy,
+                    onHandFound = { handPosX, handPosY, isHandOpen ->
+                        handPositionX = handPosX
+                        handPositionY = handPosY
+                        isHandOpenGlob = isHandOpen
+                    },
+                    onHandClosed = { newDir -> snakeViewModel.changeDirection(newDir) })
             }
 
             try {
@@ -332,9 +366,14 @@ class GameActivity : ComponentActivity() {
             }
         }, ContextCompat.getMainExecutor(this))
     }
+
 }
 
-fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
+fun processImage(
+    tracker: HandTrackingHelper, imageProxy: ImageProxy,
+    onHandFound: (Float, Float, Boolean) -> Unit,
+    onHandClosed: (SnakeDirection) -> Unit,
+) {
     val res = tracker.detectHands(imageProxy.toBitmap())
     //Log.d("RES", res?.results[0]?.handednesses())
 
@@ -359,10 +398,14 @@ fun processImage(tracker: HandTrackingHelper, imageProxy: ImageProxy) {
         val isOpen: Boolean = isHandOpen(handLandmarks)
         Log.d("OPEN", isOpen.toString())
 
+        onHandFound(centerX, centerY, isOpen)
+
         if (!isOpen) {
-            snakeViewModel.changeDirection(newDir)
+            onHandClosed(newDir)
+            // TODO: snakeViewModel.changeDirection(newDir)
         }
     }
 
     imageProxy.close()
 }
+
