@@ -71,10 +71,6 @@ class GameActivity : ComponentActivity() {
     var snakeTailSvgPath = R.drawable.snake_tail_green
     var snakeHeadSvgPath = R.drawable.snake_head_green
 
-    var handPosXGlob: Float = 0f
-    var handPosYGlob: Float = 0f
-    var isHandOpenGlob: Boolean = true
-
     // The direction selected by the user as input
     lateinit var selectedDirectionGlob: MutableState<SnakeDirection?>
 
@@ -132,7 +128,7 @@ class GameActivity : ComponentActivity() {
         snakeGridViewModel: SnakeGridViewModel = viewModel()
     ) {
         val context = LocalContext.current
-        selectedDirectionGlob = remember{ mutableStateOf(null) }
+        selectedDirectionGlob = remember { mutableStateOf(null) }
         // setupCamera(context)
 
         // graphics here
@@ -161,9 +157,6 @@ class GameActivity : ComponentActivity() {
 
     @Composable
     fun CameraPreview() {
-        var handPosX by remember { mutableFloatStateOf(handPosXGlob) }
-        var handPosY by remember { mutableFloatStateOf(handPosYGlob) }
-        var isHandOpen by remember { mutableStateOf(isHandOpenGlob) }
         // var selectedDirection by remember { mutableStateOf(selectedDirectionGlob) }
         var selectedDirection = selectedDirectionGlob.value
 
@@ -184,7 +177,8 @@ class GameActivity : ComponentActivity() {
                         )
                         // setBackgroundColor(Color.BLACK)
                         implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                        scaleType = PreviewView.ScaleType.FILL_START
+                        // Constrain the preview to fit exactly in the Box
+                        scaleType = PreviewView.ScaleType.FILL_CENTER
                     }
                     previewView.also { previewView ->
                         setupCamera(context)
@@ -194,7 +188,6 @@ class GameActivity : ComponentActivity() {
                     cameraProviderFuture.addListener({
                         val cameraProvider = cameraProviderFuture.get()
                         val preview = Preview.Builder()
-                            // .setTargetAspectRatio(RATIO_16_9)
                             .build()
 
                         val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -280,13 +273,6 @@ class GameActivity : ComponentActivity() {
                         color = Color.Blue.copy(alpha = 0.5f)
                     )
                 }
-
-                // Draw center dot
-                drawCircle(
-                    color = Color.Blue,
-                    radius = 10f, // Adjust size of the dot
-                    center = Offset(handPosX, handPosY)
-                )
             }
         }
     }
@@ -393,14 +379,13 @@ class GameActivity : ComponentActivity() {
             imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
                 processImage(tracker, imageProxy,
                     onHandFound = { handPosX, handPosY, isHandOpen ->
-                        Log.v("GameActivity.kt", "Hand Position ${handPosX}, $handPosY")
-                        handPosXGlob = handPosX
-                        handPosYGlob = handPosY
-                        isHandOpenGlob = isHandOpen
+                        // Log.v("GameActivity.kt", "Hand Position ${handPosX}, $handPosY")
                     },
                     onHandClosed = { newDir ->
-                        if(newDir != selectedDirectionGlob.value) selectedDirectionGlob.value = newDir
-                        snakeViewModel.changeDirection(newDir) })
+                        if (newDir != selectedDirectionGlob.value) selectedDirectionGlob.value =
+                            newDir
+                        snakeViewModel.changeDirection(newDir)
+                    })
             }
 
             try {
