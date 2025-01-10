@@ -9,13 +9,11 @@ import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -72,8 +70,8 @@ class GameActivity : ComponentActivity() {
     var snakeTailSvgPath = R.drawable.snake_tail_green
     var snakeHeadSvgPath = R.drawable.snake_head_green
 
-    var handPositionX: Float = 0f
-    var handPositionY: Float = 0f
+    var handPosXGlob: Float = 0f
+    var handPosYGlob: Float = 0f
     var isHandOpenGlob: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -158,13 +156,9 @@ class GameActivity : ComponentActivity() {
 
     @Composable
     fun CameraPreview() {
-        var handPosX by remember { mutableStateOf(handPositionX) }
-        var handPosY by remember { mutableStateOf(handPositionY) }
+        var handPosX by remember { mutableStateOf(handPosXGlob) }
+        var handPosY by remember { mutableStateOf(handPosYGlob) }
         var isHandOpen by remember { mutableStateOf(isHandOpenGlob) }
-
-        val context: Context = LocalContext.current
-        val cameraController: LifecycleCameraController =
-            remember { LifecycleCameraController(context) }
 
         val lifecycleOwner = LocalLifecycleOwner.current
         Box(
@@ -201,7 +195,6 @@ class GameActivity : ComponentActivity() {
                         preview.surfaceProvider = previewView.surfaceProvider
 
                         try {
-//                            cameraProvider.unbindAll()
                             cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 cameraSelector,
@@ -239,7 +232,7 @@ class GameActivity : ComponentActivity() {
                 drawCircle(
                     color = Color.Blue,
                     radius = 10f, // Adjust size of the dot
-                    center = Offset(handPositionX, handPositionY)
+                    center = Offset(handPosX, handPosY)
                 )
             }
         }
@@ -347,8 +340,8 @@ class GameActivity : ComponentActivity() {
             imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
                 processImage(tracker, imageProxy,
                     onHandFound = { handPosX, handPosY, isHandOpen ->
-                        handPositionX = handPosX
-                        handPositionY = handPosY
+                        handPosXGlob = handPosX
+                        handPosYGlob = handPosY
                         isHandOpenGlob = isHandOpen
                     },
                     onHandClosed = { newDir -> snakeViewModel.changeDirection(newDir) })
