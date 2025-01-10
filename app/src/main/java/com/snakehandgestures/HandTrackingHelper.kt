@@ -105,10 +105,10 @@ class HandTrackingHelper(context: Context) {
 
 fun getDirection(x: Float, y: Float): SnakeDirection {
     return when {
-        y >= x && y >= 1 - x -> SnakeDirection.RIGHT
-        y >= x && y < 1 - x -> SnakeDirection.UP
-        y < x && y < 1 - x -> SnakeDirection.LEFT
-        y < x && y >= 1 - x -> SnakeDirection.DOWN
+        y >= x && y >= 1 - x -> SnakeDirection.LEFT
+        y >= x && y < 1 - x -> SnakeDirection.DOWN
+        y < x && y < 1 - x -> SnakeDirection.RIGHT
+        y < x && y >= 1 - x -> SnakeDirection.UP
         else -> SnakeDirection.RIGHT // Never occurs
     }
 }

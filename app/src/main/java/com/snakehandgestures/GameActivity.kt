@@ -60,6 +60,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 import java.util.concurrent.Executors
+import androidx.compose.ui.graphics.Path
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
@@ -73,6 +74,9 @@ class GameActivity : ComponentActivity() {
     var handPosXGlob: Float = 0f
     var handPosYGlob: Float = 0f
     var isHandOpenGlob: Boolean = true
+
+    // The direction selected by the user as input
+    lateinit var selectedDirectionGlob: MutableState<SnakeDirection?>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,6 +132,7 @@ class GameActivity : ComponentActivity() {
         snakeGridViewModel: SnakeGridViewModel = viewModel()
     ) {
         val context = LocalContext.current
+        selectedDirectionGlob = remember{ mutableStateOf(null) }
         // setupCamera(context)
 
         // graphics here
@@ -156,9 +161,11 @@ class GameActivity : ComponentActivity() {
 
     @Composable
     fun CameraPreview() {
-        var handPosX by remember { mutableStateOf(handPosXGlob) }
-        var handPosY by remember { mutableStateOf(handPosYGlob) }
+        var handPosX by remember { mutableFloatStateOf(handPosXGlob) }
+        var handPosY by remember { mutableFloatStateOf(handPosYGlob) }
         var isHandOpen by remember { mutableStateOf(isHandOpenGlob) }
+        // var selectedDirection by remember { mutableStateOf(selectedDirectionGlob) }
+        var selectedDirection = selectedDirectionGlob.value
 
         val lifecycleOwner = LocalLifecycleOwner.current
         Box(
@@ -214,19 +221,65 @@ class GameActivity : ComponentActivity() {
                 val width = size.width
                 val height = size.height
 
+                // Draw the lines on the diagonals
                 drawLine(
                     color = Color.Red,
                     start = Offset(0f, 0f),
                     end = Offset(width, height),
                     strokeWidth = 4f
                 )
-
                 drawLine(
                     color = Color.Red,
                     start = Offset(0f, height),
                     end = Offset(width, 0f),
                     strokeWidth = 4f
                 )
+
+                // Highlight the selected portion of the rectangle
+                if (selectedDirection == SnakeDirection.UP) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(width, 0f)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Yellow.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.DOWN) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, height)
+                            lineTo(width, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Green.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.LEFT) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(0f, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Red.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.RIGHT) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(width, 0f)
+                            lineTo(width, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Blue.copy(alpha = 0.5f)
+                    )
+                }
 
                 // Draw center dot
                 drawCircle(
@@ -340,11 +393,14 @@ class GameActivity : ComponentActivity() {
             imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
                 processImage(tracker, imageProxy,
                     onHandFound = { handPosX, handPosY, isHandOpen ->
+                        Log.v("GameActivity.kt", "Hand Position ${handPosX}, $handPosY")
                         handPosXGlob = handPosX
                         handPosYGlob = handPosY
                         isHandOpenGlob = isHandOpen
                     },
-                    onHandClosed = { newDir -> snakeViewModel.changeDirection(newDir) })
+                    onHandClosed = { newDir ->
+                        if(newDir != selectedDirectionGlob.value) selectedDirectionGlob.value = newDir
+                        snakeViewModel.changeDirection(newDir) })
             }
 
             try {
