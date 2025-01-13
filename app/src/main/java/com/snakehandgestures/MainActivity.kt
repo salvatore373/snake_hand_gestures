@@ -86,7 +86,8 @@ fun LandingView(
                 }
                 OutlinedButton(
                     onClick = {
-                        // TODO:
+                        val intent = Intent(context, LeaderboardActivity::class.java)
+                        context.startActivity(intent)
                     },
                 ) {
                     Text(text = "Leaderboard")

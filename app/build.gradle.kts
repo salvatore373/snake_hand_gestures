@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation("me.onebone:toolbar-compose:2.3.5")
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
