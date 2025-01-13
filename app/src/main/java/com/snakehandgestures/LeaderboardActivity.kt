@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItem
@@ -30,7 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.ktx.Firebase
 import com.snakehandgestures.ui.theme.SnakeHandGesturesTheme
 import me.onebone.toolbar.CollapsingToolbarScaffold
 import me.onebone.toolbar.ScrollStrategy
@@ -102,12 +104,12 @@ class LeaderboardActivity : ComponentActivity() {
                     color = Color.Gray, // Border color
                     shape = RoundedCornerShape(playerEntryCornerDim)
                 )
-                .background(color = MaterialTheme.colorScheme.surfaceContainer) // Background color of the item
+                .background(color = MaterialTheme.colorScheme.surfaceVariant) // Background color of the item
                 .padding(8.dp), // Inner padding inside the item
         ) {
             ListItem(
                 colors = ListItemDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 headlineContent = {
                     Row(
@@ -146,14 +148,45 @@ class LeaderboardActivity : ComponentActivity() {
 
     @Composable
     fun Scoreboard() {
-        val players = List(20) { Pair("Player $it", 100 - it) }  // DEBUG
+        // Define state variables
+        var isLoading by remember { mutableStateOf(true) }
+        var players by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+        // DEBUG var players = List(20) { Pair("Player $it", 100 - it) }
 
-        LazyColumn(
-            modifier = Modifier
-                .clip(shape = RoundedCornerShape(36.dp, 36.dp, 0.dp, 0.dp))
-        ) {
-            itemsIndexed(players) { position, entry ->
-                PlayerEntry(entry, position + 1)
+        // Fetch data asynchronously
+        LaunchedEffect(Unit) {
+            // Retrieve the leaderboard
+            getSortedScores { res ->
+                players = res
+            }
+
+            // Once data is fetched, set loading to false
+            isLoading = false
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Show loading indicator when data is loading
+            if (isLoading) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 48.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Text("Loading the players' scores...")
+                }
+            }
+
+            // Show the LazyColumn when data is loaded
+            LazyColumn(
+                modifier = Modifier
+                    .clip(shape = RoundedCornerShape(36.dp, 36.dp, 0.dp, 0.dp))
+            ) {
+                itemsIndexed(players) { position, entry ->
+                    PlayerEntry(entry, position + 1)
+                }
             }
         }
     }
