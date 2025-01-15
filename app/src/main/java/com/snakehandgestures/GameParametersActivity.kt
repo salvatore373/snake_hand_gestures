@@ -77,7 +77,12 @@ class GameParametersActivity : ComponentActivity() {
             SnakeHandGesturesTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    topBar = { TopBar() },
+                    topBar = {
+                        TopBar(
+                            title = "Choose Game Parameters",
+                            onBackPressed = { onBackPressedDispatcher.onBackPressed() }
+                        )
+                    },
                     floatingActionButton = { PlayButton() }
                 ) { innerPadding ->
                     GameParametersStack(
@@ -104,31 +109,6 @@ class GameParametersActivity : ComponentActivity() {
             },
             icon = { Icon(Icons.Filled.PlayArrow, "Play button") },
             text = { Text("Play") },
-        )
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun TopBar() {
-        CenterAlignedTopAppBar(
-            title = {
-                Text(
-                    "Choose Game Parameters",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = {
-                        onBackPressedDispatcher.onBackPressed()
-                    }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Go Back to MainActivity"
-                    )
-                }
-            }
         )
     }
 
