@@ -1,5 +1,16 @@
 package com.snakehandgestures
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
 // import androidx.compose.ui.tooling.preview.Preview
 import android.Manifest
 import android.content.Context
@@ -76,19 +87,31 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
+import kotlin.math.abs
 
 const val GRID_WIDTH = 5
 const val GRID_HEIGHT = 5
 
 private lateinit var snakeViewModel: SnakeGridViewModel
 
-class GameActivity : ComponentActivity() {
+class GameActivity : ComponentActivity(), SensorEventListener {
     var snakeTailSvgPath = R.drawable.snake_tail_green
     var snakeHeadSvgPath = R.drawable.snake_head_green
 
     // The direction selected by the user as input
     lateinit var selectedDirectionGlob: MutableState<SnakeDirection?>
     lateinit var selectedDifficulty: GameDifficulty
+    lateinit var selectedGameMode: GameMode
+
+    // The variables needed to get the sensors data
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var magnetometer: Sensor? = null
+    private var gravity: FloatArray? = null
+    private var geomagnetic: FloatArray? = null
+    private var orientationAngles = FloatArray(3)
+    private val roll = mutableStateOf(0f)
+    private val pitch = mutableStateOf(0f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,17 +129,19 @@ class GameActivity : ComponentActivity() {
             AvatarColors.YELLOW -> R.drawable.snake_tail_yellow
             AvatarColors.BROWN -> R.drawable.snake_tail_brown
         }
-        // Get the selected game mode TODO: use it
+        // Get the selected game mode
         val gameModeId = intent.getIntExtra("gameMode", 0)
-        val selectedGameMode = GameMode.fromId(gameModeId)!!
+        selectedGameMode = GameMode.fromId(gameModeId)!!
         // Get selected difficulty
         val speed = intent.getIntExtra("difficulty", GameDifficulty.EASY.speed)
         selectedDifficulty = GameDifficulty.fromSpeed(speed)!!
 
-        // DEBUG
-        println("Got: $selectedAvatarColor")
-        println("Got: $selectedGameMode")
-        println("Got: $selectedDifficulty")
+        if (selectedGameMode == GameMode.ACCELEROMETER) {
+            // Initialize SensorManager and sensors
+            sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        }
 
         // if needed request permission to use camera
         if (ContextCompat.checkSelfPermission(
@@ -133,10 +158,64 @@ class GameActivity : ComponentActivity() {
                 GameplayScreen(snakeGridViewModel = snakeViewModel)
             }
         }
+    }
 
-        // Start the game
-        // snakeViewModel.startGameLogic(selectedDifficulty)
+    override fun onResume() {
+        super.onResume()
+        // Register sensors
+        accelerometer?.also { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+        }
+        magnetometer?.also { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
 
+    override fun onPause() {
+        super.onPause()
+        // Unregister sensors to save resources
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event == null) return
+
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> gravity = event.values
+            Sensor.TYPE_MAGNETIC_FIELD -> geomagnetic = event.values
+        }
+
+        if (gravity != null && geomagnetic != null) {
+            val rotationMatrix = FloatArray(9)
+            if (SensorManager.getRotationMatrix(rotationMatrix, null, gravity, geomagnetic)) {
+                // Compute the current roll and pitch values
+                SensorManager.getOrientation(rotationMatrix, orientationAngles)
+                roll.value = Math.toDegrees(orientationAngles[2].toDouble()).toFloat() // Roll angle
+                pitch.value =
+                    Math.toDegrees(orientationAngles[1].toDouble()).toFloat() // Pitch angle
+
+                // Compute the snake's new direction
+                var newDir = if(abs(abs(roll.value) - abs(pitch.value)) < 20f){
+                    // Do not change the snake's direction if it is uncertain
+                    selectedDirectionGlob.value ?: SnakeDirection.DOWN
+                }
+                else if (abs(roll.value) > abs(pitch.value)) {
+                    if (roll.value > 0) SnakeDirection.RIGHT else SnakeDirection.LEFT
+                } else {
+                    if (pitch.value > 0) SnakeDirection.UP else SnakeDirection.DOWN
+                }
+
+                // Change the direction of the snake (if needed)
+                if (newDir != selectedDirectionGlob.value) {
+                    selectedDirectionGlob.value = newDir
+                    snakeViewModel.changeDirection(newDir)
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // No action needed when accuracy changes
     }
 
     @Composable
@@ -144,7 +223,6 @@ class GameActivity : ComponentActivity() {
         snakeGridViewModel: SnakeGridViewModel = viewModel()
     ) {
         selectedDirectionGlob = remember { mutableStateOf(null) }
-        // setupCamera(context)
 
         var isStartDialogVisible by remember { mutableStateOf(true) }
         var isEndDialogVisible by remember { mutableStateOf(false) }
@@ -154,8 +232,7 @@ class GameActivity : ComponentActivity() {
             isEndDialogVisible = true
         }
 
-        // TODO: remove debug commands
-        // TODO: add "play again" button
+        // TODO: on Cancel in GameOver dialog, get back to GameParametersActivity
         // TODO: center "score" horizontally or add a "Pause button"
 
         // graphics here
@@ -177,7 +254,12 @@ class GameActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CameraPreview()
+                    if (selectedGameMode == GameMode.HAND_GESTURES) {
+                        CameraPreview()
+                    } else { // GameMode.ACCELEROMETER
+                        SensorsPreview()
+                    }
+
                     SnakeGrid(
                         cells = snakeGridViewModel.cells,
                         snakeDirection = snakeGridViewModel.direction
@@ -214,7 +296,7 @@ class GameActivity : ComponentActivity() {
                                 Text(text = "How to play")
                             },
                             text = {
-                                Text(text = "Move your hand in the up section of the rectangle to move the snake up, in the right section to move it right, and so on...")
+                                Text(text = if(selectedGameMode == GameMode.HAND_GESTURES) "Move your hand in the up section of the rectangle to move the snake up, in the right section to move it right, and so on..." else "Roll or pitch your phone to move the snake!")
                             },
                             confirmButton = {
                             },
@@ -301,7 +383,6 @@ class GameActivity : ComponentActivity() {
 
     @Composable
     fun CameraPreview() {
-        // var selectedDirection by remember { mutableStateOf(selectedDirectionGlob) }
         var selectedDirection = selectedDirectionGlob.value
 
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -353,6 +434,86 @@ class GameActivity : ComponentActivity() {
                     previewView
                 }
             )
+
+            // Overlay with Diagonal Lines
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+
+                // Draw the lines on the diagonals
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(0f, 0f),
+                    end = Offset(width, height),
+                    strokeWidth = 4f
+                )
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(0f, height),
+                    end = Offset(width, 0f),
+                    strokeWidth = 4f
+                )
+
+                // Highlight the selected portion of the rectangle
+                if (selectedDirection == SnakeDirection.UP) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(width, 0f)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Yellow.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.DOWN) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, height)
+                            lineTo(width, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Green.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.LEFT) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(0f, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Red.copy(alpha = 0.5f)
+                    )
+                }
+                if (selectedDirection == SnakeDirection.RIGHT) {
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(width, 0f)
+                            lineTo(width, height)
+                            lineTo(width / 2, height / 2)
+                            close()
+                        },
+                        color = Color.Blue.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun SensorsPreview() {
+        var selectedDirection = selectedDirectionGlob.value
+
+        Box(
+            modifier = Modifier
+                .height(250.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+
 
             // Overlay with Diagonal Lines
             Canvas(modifier = Modifier.fillMaxSize()) {
