@@ -41,11 +41,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -84,6 +87,7 @@ class GameActivity : ComponentActivity() {
 
     // The direction selected by the user as input
     lateinit var selectedDirectionGlob: MutableState<SnakeDirection?>
+    lateinit var selectedDifficulty: GameDifficulty
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,7 +110,7 @@ class GameActivity : ComponentActivity() {
         val selectedGameMode = GameMode.fromId(gameModeId)!!
         // Get selected difficulty
         val speed = intent.getIntExtra("difficulty", GameDifficulty.EASY.speed)
-        var selectedDifficulty = GameDifficulty.fromSpeed(speed)!!
+        selectedDifficulty = GameDifficulty.fromSpeed(speed)!!
 
         // DEBUG
         println("Got: $selectedAvatarColor")
@@ -130,7 +134,7 @@ class GameActivity : ComponentActivity() {
         }
 
         // Start the game
-        snakeViewModel.startGameLogic(selectedDifficulty)
+        // snakeViewModel.startGameLogic(selectedDifficulty)
 
     }
 
@@ -141,6 +145,7 @@ class GameActivity : ComponentActivity() {
         selectedDirectionGlob = remember { mutableStateOf(null) }
         // setupCamera(context)
 
+        var isStartDialogVisible by remember { mutableStateOf(true) }
         var isEndDialogVisible by remember { mutableStateOf(false) }
         var userName by remember { mutableStateOf("") }
 
@@ -156,83 +161,124 @@ class GameActivity : ComponentActivity() {
         // TODO: center "score" horizontally or add a "Pause button"
 
         // graphics here
-        Surface {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                CameraPreview()
-                SnakeGrid(
-                    cells = snakeGridViewModel.cells,
-                    snakeDirection = snakeGridViewModel.direction
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopBar(
+                    title = "Move the Snake",
+                    onBackPressed = { onBackPressedDispatcher.onBackPressed() }
                 )
-                SnakeCommands(snakeGridViewModel) // DEBUG
-                Text(// DEBUG
-                    if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
-                    // "Playing",
-                    fontSize = 30.sp
-                )
-                Text( // DEBUG
-                    "Score: ${snakeGridViewModel.score}",
-                    fontSize = 30.sp
-                )
+            },
+        ) { innerPadding ->
+            Surface {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(innerPadding)
+                        .padding(horizontal = 16.dp),
+                ) {
+                    CameraPreview()
+                    SnakeGrid(
+                        cells = snakeGridViewModel.cells,
+                        snakeDirection = snakeGridViewModel.direction
+                    )
+                    SnakeCommands(snakeGridViewModel) // DEBUG
+                    Text(// DEBUG
+                        if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
+                        // "Playing",
+                        fontSize = 30.sp
+                    )
+                    Text( // DEBUG
+                        "Score: ${snakeGridViewModel.score}",
+                        fontSize = 30.sp
+                    )
 
-                if (isEndDialogVisible) {
-                    Dialog(
-                        onDismissRequest = {
-                            isEndDialogVisible = false // Close dialog when dismissed
-                        },
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            shape = RoundedCornerShape(16.dp),
+                    if (isStartDialogVisible) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                isStartDialogVisible = false // Close dialog when dismissed
+                                // Start the game
+                                snakeViewModel.startGameLogic(selectedDifficulty)
+                            },
+                            title = {
+                                Text(text = "How to play")
+                            },
+                            text = {
+                                Text(text = "Move your hand in the up section of the rectangle to move the snake up, in the right section to move it right, and so on...")
+                            },
+                            confirmButton = {
+                            },
+                            dismissButton = {
+                                Button(onClick = {
+                                    isStartDialogVisible = false // Close dialog on dismissal
+                                    // Start the game
+                                    snakeViewModel.startGameLogic(selectedDifficulty)
+                                }) {
+                                    Text(text = "Start")
+                                }
+                            }
+                        )
+                    }
+
+                    if (isEndDialogVisible) {
+                        Dialog(
+                            onDismissRequest = {
+                                isEndDialogVisible = false // Close dialog when dismissed
+                            },
                         ) {
-                            Column(
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                                shape = RoundedCornerShape(16.dp),
                             ) {
-                                Text(
-                                    text = "Game Over",
-                                    style = MaterialTheme.typography.displaySmall
-                                )
-                                Text(
-                                    text = "Your snake died!\nYour score is ${snakeGridViewModel.score}. Press \"Save\" to be in in the Leaderboard.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                                OutlinedTextField(
-                                    value = userName,
-                                    onValueChange = { userName = it },
-                                    label = { Text("Username") }
-                                )
-
-                                Row(
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
-                                    TextButton(onClick = {
-                                        isEndDialogVisible = false // Close dialog on dismissal
-                                    }) {
-                                        Text(
-                                            text = "Cancel",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    TextButton(onClick = {
-                                        addScore(userName, snakeGridViewModel.score)
-                                        isEndDialogVisible = false // Close dialog on confirmation
-                                    }) {
-                                        Text(
-                                            text = "Save",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                    Text(
+                                        text = "Game Over",
+                                        style = MaterialTheme.typography.displaySmall
+                                    )
+                                    Text(
+                                        text = "Your snake died!\nYour score is ${snakeGridViewModel.score}. Press \"Save\" to be in in the Leaderboard.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    OutlinedTextField(
+                                        value = userName,
+                                        onValueChange = { userName = it },
+                                        label = { Text("Username") }
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                    ) {
+                                        TextButton(onClick = {
+                                            isEndDialogVisible = false // Close dialog on dismissal
+                                        }) {
+                                            Text(
+                                                text = "Cancel",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        TextButton(onClick = {
+                                            addScore(userName, snakeGridViewModel.score)
+                                            isEndDialogVisible =
+                                                false // Close dialog on confirmation
+                                        }) {
+                                            Text(
+                                                text = "Save",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
                                 }
                             }
