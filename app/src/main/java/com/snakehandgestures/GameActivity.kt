@@ -154,9 +154,6 @@ class GameActivity : ComponentActivity() {
             isEndDialogVisible = true
         }
 
-        // TODO: add scaffold with back button
-        // TODO: add padding to the whole screen
-        // TODO: add timer before game starts
         // TODO: remove debug commands
         // TODO: add "play again" button
         // TODO: center "score" horizontally or add a "Pause button"
@@ -177,23 +174,34 @@ class GameActivity : ComponentActivity() {
                         .fillMaxWidth()
                         .padding(innerPadding)
                         .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CameraPreview()
                     SnakeGrid(
                         cells = snakeGridViewModel.cells,
                         snakeDirection = snakeGridViewModel.direction
                     )
-                    SnakeCommands(snakeGridViewModel) // DEBUG
-                    Text(// DEBUG
-                        if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
-                        // "Playing",
-                        fontSize = 30.sp
-                    )
-                    Text( // DEBUG
-                        "Score: ${snakeGridViewModel.score}",
-                        fontSize = 30.sp
-                    )
+                    // SnakeCommands(snakeGridViewModel) // DEBUG
+//                    Text(
+//                        if (snakeGridViewModel.gameStatus == GameStatus.PLAYING) "Playing" else "Game Over",
+//                        // "Playing",
+//                        fontSize = 30.sp
+//                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "Score:",
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "${snakeGridViewModel.score}",
+                            fontSize = 38.sp
+                        )
+                    }
 
                     if (isStartDialogVisible) {
                         AlertDialog(
@@ -441,8 +449,10 @@ class GameActivity : ComponentActivity() {
             columns = GridCells.Fixed(GRID_WIDTH),
             userScrollEnabled = false,
             modifier = Modifier
-                .border(width = 2.dp, color = MaterialTheme.colorScheme.tertiary,
-                    shape = RoundedCornerShape(8.dp))
+                .border(
+                    width = 2.dp, color = MaterialTheme.colorScheme.tertiary,
+                    shape = RoundedCornerShape(8.dp)
+                )
         ) {
             items(
                 cells,
