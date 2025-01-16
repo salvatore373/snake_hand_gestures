@@ -233,7 +233,6 @@ class GameActivity : ComponentActivity(), SensorEventListener {
         }
 
         // TODO: on Cancel in GameOver dialog, get back to GameParametersActivity
-        // TODO: center "score" horizontally or add a "Pause button"
 
         // graphics here
         Scaffold(
@@ -746,7 +745,6 @@ fun processImage(
 
         if (!isOpen) {
             onHandClosed(newDir)
-            // TODO: snakeViewModel.changeDirection(newDir)
         }
     }
 
