@@ -19,13 +19,11 @@ import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -51,8 +49,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -61,9 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,8 +67,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -113,8 +105,12 @@ class GameActivity : ComponentActivity(), SensorEventListener {
     private val roll = mutableStateOf(0f)
     private val pitch = mutableStateOf(0f)
 
+    private lateinit var googleSignInManager: GoogleSignInManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        googleSignInManager = GoogleSignInManager(this)
 
         // Get the selected avatar color
         val avatarColorId = intent.getIntExtra("avatarColor", 0)
@@ -162,6 +158,12 @@ class GameActivity : ComponentActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        if (isEndDialogVisible && googleSignInManager.isSignedIn()) {
+            val username = googleSignInManager.getSignedInUserName()
+            addScore(username, scoreToSave)
+            isEndDialogVisible = false
+        }
+
         // Register sensors
         accelerometer?.also { sensor ->
             sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
@@ -174,7 +176,9 @@ class GameActivity : ComponentActivity(), SensorEventListener {
     override fun onPause() {
         super.onPause()
         // Unregister sensors to save resources
-        sensorManager.unregisterListener(this)
+        if (this::sensorManager.isInitialized) {
+            sensorManager.unregisterListener(this)
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -218,6 +222,9 @@ class GameActivity : ComponentActivity(), SensorEventListener {
         // No action needed when accuracy changes
     }
 
+    var isEndDialogVisible by  mutableStateOf(false)
+    var scoreToSave = 0
+
     @Composable
     fun GameplayScreen(
         snakeGridViewModel: SnakeGridViewModel = viewModel()
@@ -225,7 +232,6 @@ class GameActivity : ComponentActivity(), SensorEventListener {
         selectedDirectionGlob = remember { mutableStateOf(null) }
 
         var isStartDialogVisible by remember { mutableStateOf(true) }
-        var isEndDialogVisible by remember { mutableStateOf(false) }
         var userName by remember { mutableStateOf("") }
 
         if (snakeGridViewModel.gameStatus == GameStatus.GAME_OVER) {
@@ -345,6 +351,24 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                         label = { Text("Username") }
                                     )
 
+                                    TextButton(
+                                        onClick = {
+                                            if (googleSignInManager.isSignedIn()){
+                                                addScore(googleSignInManager.getSignedInUserName(), snakeGridViewModel.score)
+                                                isEndDialogVisible = false
+                                            }else {
+                                                scoreToSave = snakeViewModel.score
+                                                googleSignInManager.signIn()
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (googleSignInManager.isSignedIn())
+                                            Text("Continue as ${googleSignInManager.getSignedInUserName()}")
+                                        else
+                                            Text("Or log in with Google")
+                                    }
+
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth(),
@@ -361,8 +385,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                         }
                                         TextButton(onClick = {
                                             addScore(userName, snakeGridViewModel.score)
-                                            isEndDialogVisible =
-                                                false // Close dialog on confirmation
+                                            isEndDialogVisible = false // Close dialog on confirmation
                                         }) {
                                             Text(
                                                 text = "Save",
