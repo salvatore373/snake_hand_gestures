@@ -105,12 +105,17 @@ class GameActivity : ComponentActivity(), SensorEventListener {
     private val roll = mutableStateOf(0f)
     private val pitch = mutableStateOf(0f)
 
+    // Authentication variables
     private lateinit var googleSignInManager: GoogleSignInManager
+    private var authUserName by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         googleSignInManager = GoogleSignInManager(this)
+        if(googleSignInManager.isSignedIn()) {
+            authUserName = googleSignInManager.getSignedInUserName()
+        }
 
         // Get the selected avatar color
         val avatarColorId = intent.getIntExtra("avatarColor", 0)
@@ -159,9 +164,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         if (isEndDialogVisible && googleSignInManager.isSignedIn()) {
-            val username = googleSignInManager.getSignedInUserName()
-            addScore(username, scoreToSave)
-            isEndDialogVisible = false
+            authUserName = googleSignInManager.getSignedInUserName()
         }
 
         // Register sensors
@@ -199,11 +202,10 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                     Math.toDegrees(orientationAngles[1].toDouble()).toFloat() // Pitch angle
 
                 // Compute the snake's new direction
-                var newDir = if(abs(abs(roll.value) - abs(pitch.value)) < 20f){
+                var newDir = if (abs(abs(roll.value) - abs(pitch.value)) < 20f) {
                     // Do not change the snake's direction if it is uncertain
                     selectedDirectionGlob.value ?: SnakeDirection.DOWN
-                }
-                else if (abs(roll.value) > abs(pitch.value)) {
+                } else if (abs(roll.value) > abs(pitch.value)) {
                     if (roll.value > 0) SnakeDirection.RIGHT else SnakeDirection.LEFT
                 } else {
                     if (pitch.value > 0) SnakeDirection.UP else SnakeDirection.DOWN
@@ -222,7 +224,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
         // No action needed when accuracy changes
     }
 
-    var isEndDialogVisible by  mutableStateOf(false)
+    var isEndDialogVisible by mutableStateOf(false)
     var scoreToSave = 0
 
     @Composable
@@ -301,7 +303,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                 Text(text = "How to play")
                             },
                             text = {
-                                Text(text = if(selectedGameMode == GameMode.HAND_GESTURES) "Move your hand in the up section of the rectangle to move the snake up, in the right section to move it right, and so on..." else "Roll or pitch your phone to move the snake!")
+                                Text(text = if (selectedGameMode == GameMode.HAND_GESTURES) "Move your hand in the up section of the rectangle to move the snake up, in the right section to move it right, and so on..." else "Roll or pitch your phone to move the snake!")
                             },
                             confirmButton = {
                             },
@@ -346,27 +348,22 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                         textAlign = TextAlign.Center
                                     )
                                     OutlinedTextField(
-                                        value = userName,
+                                        value = authUserName ?: userName,
+                                        enabled = authUserName == null,
                                         onValueChange = { userName = it },
                                         label = { Text("Username") }
                                     )
 
-                                    TextButton(
-                                        onClick = {
-                                            if (googleSignInManager.isSignedIn()){
-                                                addScore(googleSignInManager.getSignedInUserName(), snakeGridViewModel.score)
-                                                isEndDialogVisible = false
-                                            }else {
+                                    if (!googleSignInManager.isSignedIn()) {
+                                        TextButton(
+                                            onClick = {
                                                 scoreToSave = snakeViewModel.score
                                                 googleSignInManager.signIn()
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        if (googleSignInManager.isSignedIn())
-                                            Text("Continue as ${googleSignInManager.getSignedInUserName()}")
-                                        else
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
                                             Text("Or log in with Google")
+                                        }
                                     }
 
                                     Row(
@@ -384,8 +381,9 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                             )
                                         }
                                         TextButton(onClick = {
-                                            addScore(userName, snakeGridViewModel.score)
-                                            isEndDialogVisible = false // Close dialog on confirmation
+                                            addScore(authUserName ?: userName, snakeGridViewModel.score)
+                                            isEndDialogVisible =
+                                                false // Close dialog on confirmation
                                         }) {
                                             Text(
                                                 text = "Save",
