@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -113,6 +114,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         // Lock to portrait mode
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
