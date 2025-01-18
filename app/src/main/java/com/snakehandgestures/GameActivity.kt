@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 // import androidx.compose.ui.tooling.preview.Preview
 import android.Manifest
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -112,6 +113,8 @@ class GameActivity : ComponentActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Lock to portrait mode
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         googleSignInManager = GoogleSignInManager(this)
         if (googleSignInManager.isSignedIn()) {
