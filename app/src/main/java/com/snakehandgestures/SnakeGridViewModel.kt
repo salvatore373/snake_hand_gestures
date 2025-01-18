@@ -1,5 +1,6 @@
 package com.snakehandgestures
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -62,6 +65,7 @@ class SnakeGridViewModel() : ViewModel() {
     // Function to start the periodic task
     fun startGameLogic(difficulty: GameDifficulty) {
         viewModelScope.launch {
+            Log.i("VIEWMODELSCOPE", "started")
             _snakeLogic.startGame(difficulty)
             { snakeCells, newGameStatus, newPrizeCell ->
                 // Initialize a representation of the grid, where the false items represent empty cells at the new timestep
@@ -116,4 +120,20 @@ class SnakeGridViewModel() : ViewModel() {
     }
 
     fun changeDirection(newDirection: SnakeDirection) = _snakeLogic.changeDirection(newDirection)
+
+    fun restart() {
+        // viewModelScope.cancel("Game Restarted")
+        viewModelScope.coroutineContext.cancelChildren()
+        // Clear the data in the logic data structure
+        _snakeLogic.clearData()
+        // Clear the data in the view model
+        for (i in _cells.indices) _cells[i].content = CellContent.EMPTY
+        for (snakeCell in _snakeLogic.occupiedCells) {
+            var uiCellInd = _convertCoordinatesToIndex(snakeCell.x, snakeCell.y)
+            _cells[uiCellInd].content = snakeCell.content
+        }
+        _prizeCell = null
+        _gameStatus = GameStatus.PLAYING
+        _direction = _snakeLogic.currentDirection
+    }
 }

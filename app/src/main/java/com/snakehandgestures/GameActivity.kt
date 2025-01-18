@@ -44,6 +44,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -113,7 +114,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
 
         googleSignInManager = GoogleSignInManager(this)
-        if(googleSignInManager.isSignedIn()) {
+        if (googleSignInManager.isSignedIn()) {
             authUserName = googleSignInManager.getSignedInUserName()
         }
 
@@ -279,18 +280,45 @@ class GameActivity : ComponentActivity(), SensorEventListener {
 //                        fontSize = 30.sp
 //                    )
 
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        Text(
-                            "Score:",
-                            fontSize = 24.sp
-                        )
-                        Text(
-                            "${snakeGridViewModel.score}",
-                            fontSize = 38.sp
-                        )
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                "Score:",
+                                fontSize = 24.sp
+                            )
+                            Text(
+                                "${snakeGridViewModel.score}",
+                                fontSize = 38.sp
+                            )
+                        }
+
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                "Restart:",
+                                fontSize = 24.sp
+                            )
+                            IconButton(
+                                onClick = {
+                                    snakeGridViewModel.restart()
+                                    isStartDialogVisible = true
+                                }
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.restart_icon),
+                                    contentDescription = ""
+                                )
+                            }
+                        }
                     }
 
                     if (isStartDialogVisible) {
@@ -382,7 +410,10 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                                             )
                                         }
                                         TextButton(onClick = {
-                                            addScore(authUserName ?: userName, snakeGridViewModel.score)
+                                            addScore(
+                                                authUserName ?: userName,
+                                                snakeGridViewModel.score
+                                            )
                                             isEndDialogVisible =
                                                 false // Close dialog on confirmation
                                         }) {

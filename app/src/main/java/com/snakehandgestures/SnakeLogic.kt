@@ -185,4 +185,15 @@ class SnakeLogic(private var gridWidth: Int, private var gridHeight: Int) {
             delay(difficulty.speed.toLong())
         }
     }
+
+    /**
+     * It removes all the data about the current game.
+     */
+    fun clearData() {
+        occupiedCells = mutableListOf<Cell>(
+            Cell(0, 0, CellContent.FILLED_BODY), Cell(1, 0, CellContent.FILLED_HEAD),
+        )
+        prizeCell = null
+        currentDirection = SnakeDirection.RIGHT
+    }
 }
