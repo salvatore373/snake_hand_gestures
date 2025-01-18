@@ -149,6 +149,7 @@ class GameActivity : ComponentActivity(), SensorEventListener {
                 this,
                 Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
+            && selectedGameMode == GameMode.HAND_GESTURES
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1)
         }
